@@ -1,34 +1,29 @@
 package com.vikram.airsageai
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.vikram.airsageai.ui.components.GasPpmGauge
-import com.vikram.airsageai.ui.navigation.Navigation
 import com.vikram.airsageai.ui.screens.HomeScreen
 import com.vikram.airsageai.ui.screens.SplashContent
-import com.vikram.airsageai.ui.theme.AirSageAiTheme
 import com.vikram.airsageai.utils.Database
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
+
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
+
 
          val database = Database()
 
@@ -59,3 +54,8 @@ fun AppContent(navController: NavController) {
         SplashContent()
     }
 }
+
+
+
+
+

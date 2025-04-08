@@ -16,11 +16,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,30 +37,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.vikram.airsageai.R
+import com.vikram.airsageai.ui.components.AppBottomBar
 import com.vikram.airsageai.ui.components.GasPpmGauge
 
 @Composable
 fun HomeScreen(navController: NavController){
     AirQualityIndexScreen()
 }
+
 @Composable
 fun AirQualityIndexScreen() {
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize()
-                .background(Color(0xFF96D9F3))
+
+
+
+        Scaffold(
+            bottomBar = {
+                AppBottomBar()
+            }
         ) {
-            items(1){
-                // Main AQI display with background scenery
-                AQIDisplay()
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+                    .padding(it)
+                    .background(Color(0xFF96D9F3))
+            ) {
+                items(1){
+                    // Main AQI display with background scenery
+                    AQIDisplay()
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                // Grid of observations
-                ObservationsGrid()
+                    // Grid of observations
+                    ObservationsGrid()
+                }
             }
         }
-        // Main content
+
+
+
+
 
 
 }
@@ -74,7 +90,7 @@ fun TopAppBar() {
     ) {
         // Back button
         Icon(
-            imageVector = Icons.Default.ArrowBack,
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = "Back",
             modifier = Modifier.size(24.dp)
         )
@@ -113,16 +129,16 @@ fun AQIDisplay() {
         modifier = Modifier
             .fillMaxWidth()
             .height(320.dp)
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
     ) {
 
         // This would be your actual background scenery image
         // Replace R.drawable.landscape_background with your actual drawable
         Image(
-            painter = painterResource(id = R.drawable.good_weather), // Placeholder
+            painter = painterResource(id = R.drawable.good_weather),
             contentDescription = "Landscape Background",
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.FillWidth
+            contentScale = ContentScale.FillBounds
         )
 
         // AQI Value and Label
@@ -131,7 +147,7 @@ fun AQIDisplay() {
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.SpaceEvenly
         ) {
             TopAppBar()
             Text(
@@ -141,7 +157,6 @@ fun AQIDisplay() {
                 color = Color.Black
             )
 
-            Spacer(modifier = Modifier.height(100.dp))
 
             Text(
                 text = "Air Quality Index",
@@ -232,12 +247,7 @@ fun ObservationCard(title: String, value: String, modifier: Modifier = Modifier)
                         .clip(RoundedCornerShape(50))
                 ) {
                     GasPpmGauge(
-                        currentValue = 150f,
-                        minValue = 0f,
-                        maxValue = 500f,
-                        gaugeSize = 50.dp,
-                        warningThreshold = 150f,
-                        dangerThreshold = 300f
+                        currentValue = 150f
                     )
                 }
 
@@ -263,28 +273,7 @@ fun ObservationCard(title: String, value: String, modifier: Modifier = Modifier)
     }
 }
 
-@Composable
-fun GaugeMeter() {
-    // This is a placeholder for the gauge meter
-    // In a real app, you would implement a custom gauge meter or use a library
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(Color.Red, Color.Yellow, Color.Green)
-                )
-            )
-    ) {
-        // The gauge needle
-        Box(
-            modifier = Modifier
-                .size(4.dp, 20.dp)
-                .background(Color.Black)
-                .align(Alignment.Center)
-        )
-    }
-}
+
 
 @Preview(showBackground = true)
 @Composable

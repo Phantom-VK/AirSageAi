@@ -1,14 +1,25 @@
 package com.vikram.airsageai.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -31,47 +42,51 @@ fun GasPpmGauge(
     warningThreshold: Float = 500f,
     dangerThreshold: Float = 800f
 ) {
-    // Validate inputs
-    require(minValue < maxValue) { "minValue must be less than maxValue" }
-    require(currentValue in minValue..maxValue) { "currentValue must be between minValue and maxValue" }
-    require(warningThreshold < dangerThreshold) { "warningThreshold must be less than dangerThreshold" }
-    
+    // Validate inputs with safe handling of invalid values
+    val validatedMinValue = minValue
+    val validatedMaxValue = if (maxValue <= minValue) minValue + 1f else maxValue
+    val validatedWarningThreshold = if (warningThreshold <= minValue) (minValue + maxValue) / 3 else warningThreshold
+    val validatedDangerThreshold = if (dangerThreshold <= warningThreshold)
+        warningThreshold + (maxValue - warningThreshold) / 2 else dangerThreshold
+
+    // Clamp current value within range instead of requiring specific values
+    val clampedValue = currentValue.coerceIn(validatedMinValue, validatedMaxValue)
+
     // Calculate value percentage for color determination
-    val valuePercentage = (currentValue - minValue) / (maxValue - minValue)
+    val valuePercentage = (clampedValue - validatedMinValue) / (validatedMaxValue - validatedMinValue)
     val gaugeColor = when {
-        currentValue >= dangerThreshold -> Color(0xFFFF5252) // Material red A200
-        currentValue >= warningThreshold -> Color(0xFFFFD740) // Material amber A200
+        clampedValue >= validatedDangerThreshold -> Color(0xFFFF5252) // Material red A200
+        clampedValue >= validatedWarningThreshold -> Color(0xFFFFD740) // Material amber A200
         else -> Color(0xFF69F0AE) // Material green A200
     }
 
     Box(
-        modifier = modifier
-            .size(gaugeSize),
+        modifier = modifier.size(gaugeSize),
         contentAlignment = Alignment.Center
     ) {
         // Draw the gauge background and needle
         Canvas(modifier = Modifier.fillMaxSize()) {
             val strokeWidth = size.width * 0.1f // Thinner stroke for small gauge
-            
+
             drawModernGaugeBackground(
-                minValue = minValue,
-                maxValue = maxValue,
-                warningThreshold = warningThreshold,
-                dangerThreshold = dangerThreshold,
+                minValue = validatedMinValue,
+                maxValue = validatedMaxValue,
+                warningThreshold = validatedWarningThreshold,
+                dangerThreshold = validatedDangerThreshold,
                 strokeWidth = strokeWidth
             )
-            
+
             drawModernNeedle(
-                currentValue = currentValue,
-                minValue = minValue,
-                maxValue = maxValue,
+                currentValue = clampedValue,
+                minValue = validatedMinValue,
+                maxValue = validatedMaxValue,
                 needleColor = gaugeColor
             )
         }
 
         // Display current value in the center
         Text(
-            text = formatValue(currentValue),
+            text = formatValue(clampedValue),
             color = gaugeColor,
             fontSize = (gaugeSize.value * 0.22).sp,
             fontWeight = FontWeight.Bold
@@ -96,11 +111,11 @@ private fun DrawScope.drawModernGaugeBackground(
 ) {
     val sweepAngle = 270f // Wider sweep angle for better readability
     val startAngle = 135f // Starting at upper left
-    
+
     // Calculate the center and radius
     val center = Offset(size.width / 2, size.height / 2)
     val outerRadius = (size.width / 2) - (strokeWidth / 2)
-    
+
     // Background track with rounded edges
     drawArc(
         color = Color(0x1F000000), // Semi-transparent black
@@ -111,14 +126,16 @@ private fun DrawScope.drawModernGaugeBackground(
         size = Size(outerRadius * 2, outerRadius * 2),
         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
     )
-    
+
     // Draw the colored segments with gradient effect
-    val safeEndValue = minValue + (warningThreshold - minValue).coerceAtLeast(0f)
-    val warningEndValue = minValue + (dangerThreshold - minValue).coerceAtLeast(0f)
-    
+    // Ensure values are within range and properly bounded
+    val safeEndValue = (warningThreshold - minValue).coerceAtLeast(0f) + minValue
+    val warningEndValue = (dangerThreshold - minValue).coerceAtLeast(0f) + minValue
+    val valueRange = maxValue - minValue
+
     // Safe zone (green)
-    if (safeEndValue > minValue) {
-        val safeSweep = (safeEndValue - minValue) / (maxValue - minValue) * sweepAngle
+    if (safeEndValue > minValue && valueRange > 0) {
+        val safeSweep = (safeEndValue - minValue) / valueRange * sweepAngle
         drawGradientArc(
             startAngle = startAngle,
             sweepAngle = safeSweep,
@@ -129,12 +146,13 @@ private fun DrawScope.drawModernGaugeBackground(
             strokeWidth = strokeWidth
         )
     }
-    
+
     // Warning zone (yellow)
-    if (warningEndValue > safeEndValue) {
-        val warningSweep = (warningEndValue - safeEndValue) / (maxValue - minValue) * sweepAngle
+    if (warningEndValue > safeEndValue && valueRange > 0) {
+        val warningSweep = (warningEndValue - safeEndValue) / valueRange * sweepAngle
+        val warningStartAngle = startAngle + ((safeEndValue - minValue) / valueRange * sweepAngle)
         drawGradientArc(
-            startAngle = startAngle + ((safeEndValue - minValue) / (maxValue - minValue) * sweepAngle),
+            startAngle = warningStartAngle,
             sweepAngle = warningSweep,
             center = center,
             radius = outerRadius,
@@ -143,12 +161,13 @@ private fun DrawScope.drawModernGaugeBackground(
             strokeWidth = strokeWidth
         )
     }
-    
+
     // Danger zone (red)
-    if (maxValue > warningEndValue) {
-        val dangerSweep = (maxValue - warningEndValue) / (maxValue - minValue) * sweepAngle
+    if (maxValue > warningEndValue && valueRange > 0) {
+        val dangerSweep = (maxValue - warningEndValue) / valueRange * sweepAngle
+        val dangerStartAngle = startAngle + ((warningEndValue - minValue) / valueRange * sweepAngle)
         drawGradientArc(
-            startAngle = startAngle + ((warningEndValue - minValue) / (maxValue - minValue) * sweepAngle),
+            startAngle = dangerStartAngle,
             sweepAngle = dangerSweep,
             center = center,
             radius = outerRadius,
@@ -157,7 +176,7 @@ private fun DrawScope.drawModernGaugeBackground(
             strokeWidth = strokeWidth
         )
     }
-    
+
     // Draw minimal tick marks for small gauge
     drawMinimalTicks(center, outerRadius, startAngle, sweepAngle, strokeWidth)
 }
@@ -171,19 +190,21 @@ private fun DrawScope.drawGradientArc(
     endColor: Color,
     strokeWidth: Float
 ) {
-    // Create a gradient brush
+    // Create a gradient brush with proper error handling for trigonometric functions
+    val startRadians = Math.toRadians(startAngle.toDouble())
+    val endRadians = Math.toRadians((startAngle + sweepAngle).toDouble())
+
+    val startX = center.x + radius * cos(startRadians).toFloat()
+    val startY = center.y + radius * sin(startRadians).toFloat()
+    val endX = center.x + radius * cos(endRadians).toFloat()
+    val endY = center.y + radius * sin(endRadians).toFloat()
+
     val brush = Brush.linearGradient(
         colors = listOf(startColor, endColor),
-        start = Offset(
-            center.x + radius * cos(Math.toRadians((startAngle).toDouble())).toFloat(),
-            center.y + radius * sin(Math.toRadians((startAngle).toDouble())).toFloat()
-        ),
-        end = Offset(
-            center.x + radius * cos(Math.toRadians((startAngle + sweepAngle).toDouble())).toFloat(),
-            center.y + radius * sin(Math.toRadians((startAngle + sweepAngle).toDouble())).toFloat()
-        )
+        start = Offset(startX, startY),
+        end = Offset(endX, endY)
     )
-    
+
     drawArc(
         brush = brush,
         startAngle = startAngle,
@@ -204,22 +225,23 @@ private fun DrawScope.drawMinimalTicks(
 ) {
     val majorTickCount = 3 // Reduced for small gauge
     val tickLength = strokeWidth * 0.8f
-    
+
     // Draw just a few major ticks
     for (i in 0..majorTickCount) {
         val angle = startAngle + (sweepAngle * i / majorTickCount)
+        val radians = Math.toRadians(angle.toDouble())
         val outerRadius = radius + (strokeWidth / 2)
         val innerRadius = outerRadius + tickLength
-        
+
         val startPos = Offset(
-            center.x + outerRadius * cos(Math.toRadians(angle.toDouble())).toFloat(),
-            center.y + outerRadius * sin(Math.toRadians(angle.toDouble())).toFloat()
+            center.x + outerRadius * cos(radians).toFloat(),
+            center.y + outerRadius * sin(radians).toFloat()
         )
         val endPos = Offset(
-            center.x + innerRadius * cos(Math.toRadians(angle.toDouble())).toFloat(),
-            center.y + innerRadius * sin(Math.toRadians(angle.toDouble())).toFloat()
+            center.x + innerRadius * cos(radians).toFloat(),
+            center.y + innerRadius * sin(radians).toFloat()
         )
-        
+
         drawLine(
             color = Color(0x99000000), // Semi-transparent black
             start = startPos,
@@ -240,16 +262,16 @@ private fun DrawScope.drawModernNeedle(
     val radius = size.width * 0.38f // Slightly shorter than gauge
     val startAngle = 135f
     val sweepAngle = 270f
-    
-    // Calculate needle angle
-    val valueRatio = (currentValue - minValue) / (maxValue - minValue)
-    val needleAngle = startAngle + sweepAngle * valueRatio
-    
+
+    // Calculate needle angle with safety check for division by zero
+    val valueRange = maxValue - minValue
+    val valueRatio = if (valueRange > 0) (currentValue - minValue) / valueRange else 0f
+    val needleAngle = startAngle + sweepAngle * valueRatio.coerceIn(0f, 1f)
+
     // Needle parameters
     val needleBaseWidth = size.width * 0.03f
-    val needleTipWidth = size.width * 0.01f
     val needleCapRadius = size.width * 0.08f
-    
+
     // Draw needle with shadow for depth
     rotate(needleAngle, center) {
         // Needle shadow
@@ -265,7 +287,7 @@ private fun DrawScope.drawModernNeedle(
             style = Fill,
             blendMode = BlendMode.SrcOver
         )
-        
+
         // Actual needle
         val needlePath = Path().apply {
             moveTo(center.x - needleBaseWidth / 2, center.y)
@@ -280,20 +302,20 @@ private fun DrawScope.drawModernNeedle(
             blendMode = BlendMode.SrcOver
         )
     }
-    
+
     // Draw needle cap with gradient for 3D effect
     val capGradient = Brush.radialGradient(
         colors = listOf(Color.White, needleColor.copy(alpha = 0.8f)),
         center = Offset(center.x - needleCapRadius * 0.2f, center.y - needleCapRadius * 0.2f),
         radius = needleCapRadius * 1.2f
     )
-    
+
     drawCircle(
         brush = capGradient,
         radius = needleCapRadius,
         center = center
     )
-    
+
     // Highlight on cap for metallic look
     drawCircle(
         color = Color.White.copy(alpha = 0.6f),
