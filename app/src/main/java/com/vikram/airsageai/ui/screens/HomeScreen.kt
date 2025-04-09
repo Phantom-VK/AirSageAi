@@ -1,5 +1,6 @@
 package com.vikram.airsageai.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -36,15 +37,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.vikram.airsageai.R
 import com.vikram.airsageai.ui.components.AppBottomBar
 import com.vikram.airsageai.ui.components.CircularSpeedIndicator
 import com.vikram.airsageai.ui.components.GasPpmGauge
+import com.vikram.airsageai.utils.GasReading
 import com.vikram.airsageai.utils.GasState
+import com.vikram.airsageai.viewmodels.GasDataViewModel
 
 @Composable
 fun HomeScreen(navController: NavController, paddingValues: PaddingValues){
+
+    val gasDataViewModel : GasDataViewModel = viewModel()
+    val latestReading = gasDataViewModel.latestReading.value
+
+
+
     LazyColumn(
         modifier = Modifier.fillMaxSize()
             .padding(paddingValues)
@@ -55,7 +65,7 @@ fun HomeScreen(navController: NavController, paddingValues: PaddingValues){
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ObservationsGrid()
+            ObservationsGrid(latestReading)
         }
     }
 }
@@ -150,7 +160,18 @@ fun AQIDisplay() {
 }
 
 @Composable
-fun ObservationsGrid() {
+fun ObservationsGrid(
+    gasReading: GasReading?
+) {
+    val CO = gasReading?.CO_PPM?.toFloat() ?: 0f
+    val CO2 = gasReading?.CO2_PPM?.toFloat() ?: 0f
+    val NH3 = gasReading?.NH3_PPM?.toFloat() ?: 0f
+    val NOx = gasReading?.NOx_PPM?.toFloat() ?: 0f
+    val LPG = gasReading?.LPG_PPM?.toFloat() ?: 0f
+    val Methane = gasReading?.Methane_PPM?.toFloat() ?: 0f
+    val Hydrogen = gasReading?.Hydrogen_PPM?.toFloat() ?: 0f
+
+
     Column(
         modifier = Modifier.fillMaxWidth()
             .padding(horizontal = 20.dp)
@@ -166,8 +187,8 @@ fun ObservationsGrid() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ObservationCard("CO", 400f, modifier = Modifier.weight(1f))
-            ObservationCard("CO2", 300f, modifier = Modifier.weight(1f))
+            ObservationCard("CO", CO, modifier = Modifier.weight(1f))
+            ObservationCard("CO2", CO2, modifier = Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -177,8 +198,8 @@ fun ObservationsGrid() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ObservationCard("NH3", 200f, modifier = Modifier.weight(1f))
-            ObservationCard("NOx", 100f, modifier = Modifier.weight(1f))
+            ObservationCard("NH3", NH3, modifier = Modifier.weight(1f))
+            ObservationCard("NOx", NOx, modifier = Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -188,8 +209,8 @@ fun ObservationsGrid() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ObservationCard("LPG", 60f, modifier = Modifier.weight(1f))
-            ObservationCard("Methane", 60f, modifier = Modifier.weight(1f))
+            ObservationCard("LPG", LPG, modifier = Modifier.weight(1f))
+            ObservationCard("Methane", Methane, modifier = Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -199,7 +220,7 @@ fun ObservationsGrid() {
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            ObservationCard("Hydrogen", gasValue = 60f, modifier = Modifier.width(180.dp))
+            ObservationCard("Hydrogen", gasValue = Hydrogen, modifier = Modifier.width(180.dp))
         }
     }
 }

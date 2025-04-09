@@ -5,5 +5,4 @@ data class GasState(
     val maxGasValue: Float,
     val warningThreshold: Float,
     val dangerThreshold: Float
-
 )
