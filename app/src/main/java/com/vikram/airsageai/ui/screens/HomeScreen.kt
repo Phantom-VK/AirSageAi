@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,47 +39,27 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.vikram.airsageai.R
 import com.vikram.airsageai.ui.components.AppBottomBar
+import com.vikram.airsageai.ui.components.CircularSpeedIndicator
 import com.vikram.airsageai.ui.components.GasPpmGauge
+import com.vikram.airsageai.utils.GasState
 
 @Composable
-fun HomeScreen(navController: NavController){
-    AirQualityIndexScreen()
-}
+fun HomeScreen(navController: NavController, paddingValues: PaddingValues){
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
+            .padding(paddingValues)
+            .background(Color(0xFF96D9F3))
+    ) {
+        items(1){
+            AQIDisplay()
 
-@Composable
-fun AirQualityIndexScreen() {
+            Spacer(modifier = Modifier.height(16.dp))
 
-
-
-
-        Scaffold(
-            bottomBar = {
-                AppBottomBar()
-            }
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-                    .padding(it)
-                    .background(Color(0xFF96D9F3))
-            ) {
-                items(1){
-                    // Main AQI display with background scenery
-                    AQIDisplay()
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Grid of observations
-                    ObservationsGrid()
-                }
-            }
+            ObservationsGrid()
         }
-
-
-
-
-
-
+    }
 }
+
 
 @Composable
 fun TopAppBar() {
@@ -185,8 +166,8 @@ fun ObservationsGrid() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ObservationCard("CO", "12.0 ppm", Modifier.weight(1f))
-            ObservationCard("CO2", "12.0 ppm", Modifier.weight(1f))
+            ObservationCard("CO", 400f, modifier = Modifier.weight(1f))
+            ObservationCard("CO2", 300f, modifier = Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -196,8 +177,8 @@ fun ObservationsGrid() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ObservationCard("NH3", "12.0 ppm", Modifier.weight(1f))
-            ObservationCard("NOx", "12.0 ppm", Modifier.weight(1f))
+            ObservationCard("NH3", 200f, modifier = Modifier.weight(1f))
+            ObservationCard("NOx", 100f, modifier = Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -207,8 +188,8 @@ fun ObservationsGrid() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ObservationCard("LPG", "12.0 ppm", Modifier.weight(1f))
-            ObservationCard("Methane", "12.0 ppm", Modifier.weight(1f))
+            ObservationCard("LPG", 60f, modifier = Modifier.weight(1f))
+            ObservationCard("Methane", 60f, modifier = Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -218,13 +199,21 @@ fun ObservationsGrid() {
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            ObservationCard("Hydrogen", "12.0 ppm", Modifier.width(180.dp))
+            ObservationCard("Hydrogen", gasValue = 60f, modifier = Modifier.width(180.dp))
         }
     }
 }
 
 @Composable
-fun ObservationCard(title: String, value: String, modifier: Modifier = Modifier) {
+fun ObservationCard(
+    title: String,
+    gasValue: Float,
+    maxGasValue: Float = 1000f,
+    warningThreshold: Float = 500f,
+    dangerThreshold: Float = 800f,
+    unit: String = "ppm",
+    modifier: Modifier = Modifier
+) {
     Card(
         modifier = modifier
             .height(100.dp),
@@ -240,14 +229,20 @@ fun ObservationCard(title: String, value: String, modifier: Modifier = Modifier)
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Gauge meter placeholder
+                // Circular Speed Indicator replacing the GasPpmGauge
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(50))
                 ) {
-                    GasPpmGauge(
-                        currentValue = 150f
+                    CircularSpeedIndicator(
+                        gasState = GasState(
+                            gasValue = gasValue,
+                            maxGasValue = maxGasValue,
+                            warningThreshold = warningThreshold,
+                            dangerThreshold = dangerThreshold
+                        ),
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 
@@ -265,7 +260,7 @@ fun ObservationCard(title: String, value: String, modifier: Modifier = Modifier)
 
             // Value
             Text(
-                text = value,
+                text = "$gasValue $unit",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -273,10 +268,19 @@ fun ObservationCard(title: String, value: String, modifier: Modifier = Modifier)
     }
 }
 
-
-
 @Preview(showBackground = true)
 @Composable
-fun PreviewAirQualityIndexScreen() {
-    AirQualityIndexScreen()
+fun ObservationCardPreview() {
+    ObservationCard(
+        title = "Carbon Monoxide",
+        gasValue = 150f
+    )
 }
+
+
+//
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewAirQualityIndexScreen() {
+//    AirQualityIndexScreen()
+//}
