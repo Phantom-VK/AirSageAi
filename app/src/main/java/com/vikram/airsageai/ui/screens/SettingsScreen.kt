@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.vikram.airsageai.ui.components.CustomDropdown
-import org.intellij.lang.annotations.Language
 
 @Composable
 fun SettingsScreen(navController: NavHostController, paddingValues: PaddingValues) {

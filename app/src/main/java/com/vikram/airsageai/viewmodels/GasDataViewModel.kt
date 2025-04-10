@@ -30,6 +30,7 @@ class GasDataViewModel : ViewModel() {
                     // Since it's an array, snapshot.children is an iterable of entries
                     for (data in snapshot.children) {
                         val readingMap = data.value as? Map<String, Any>
+                        Log.d("Firebase", "Received data: $readingMap")
                         if (readingMap != null) {
                             try {
                                 val reading = GasReading(

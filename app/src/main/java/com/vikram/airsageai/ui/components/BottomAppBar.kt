@@ -35,7 +35,7 @@ import com.vikram.airsageai.viewmodels.ScreenViewModel
 
 
 @Composable
-fun AppBottomBar() {
+fun AppBottomBar(surfaceColor:Color) {
     val selectedItem = remember { mutableStateOf<Screen>(Screen.Home) }
 
     Box(
@@ -45,7 +45,7 @@ fun AppBottomBar() {
         contentAlignment = Alignment.BottomCenter
     ) {
         Surface(
-            color = Color(0xFF96D9F3),
+            color = surfaceColor,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
@@ -119,10 +119,10 @@ fun BottomBarItem(
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewAppBar(){
-
-    AppBottomBar()
-}
+//
+//@Preview(showBackground = true)
+//@Composable
+//fun PreviewAppBar(){
+//
+//    AppBottomBar()
+//}
