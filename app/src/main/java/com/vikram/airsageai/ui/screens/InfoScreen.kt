@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -29,8 +30,8 @@ import com.vikram.airsageai.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InfoScreen(
-    navController: NavHostController,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    themeColor: Color
 ) {
     val scrollState = rememberScrollState()
 
@@ -46,7 +47,7 @@ fun InfoScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(themeColor)
                 .padding(24.dp)
         ) {
             Column(
@@ -122,7 +123,8 @@ fun InfoScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                }
+                },
+                color = themeColor
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -143,7 +145,7 @@ fun InfoScreen(
 
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            color = Color.White,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -164,7 +166,8 @@ fun InfoScreen(
                             }
                         }
                     }
-                }
+                },
+                color = themeColor
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -197,7 +200,8 @@ fun InfoScreen(
                             effects = "Exposure to pollutants like CO and NOx may worsen asthma or bronchitis"
                         )
                     }
-                }
+                },
+                color = themeColor
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -210,7 +214,13 @@ fun InfoScreen(
 
                 Button(
                     onClick = { /* Handle action */ },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonColors(
+                        containerColor = themeColor,
+                        contentColor = Color.White,
+                        disabledContainerColor = themeColor.copy(alpha = 0.5f),
+                        disabledContentColor = Color.White.copy(alpha = 0.5f)
+                    )
                 ) {
                     Text("Learn More")
                 }
@@ -226,13 +236,14 @@ fun InfoScreen(
 fun GuidelineSection(
     title: String,
     painter: Int,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
+    color: Color
 ) {
     var expanded by remember { mutableStateOf(true) }
 
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
+        color = color,
         tonalElevation = 2.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -260,7 +271,7 @@ fun GuidelineSection(
                     Icon(
                         painter = painterResource(painter),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = Color.Black
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
@@ -368,4 +379,10 @@ fun HealthEffectItem(title: String, effects: String) {
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewInfoScreens(){
+    InfoScreen(PaddingValues(), Color(0xFF96D9F3))
 }

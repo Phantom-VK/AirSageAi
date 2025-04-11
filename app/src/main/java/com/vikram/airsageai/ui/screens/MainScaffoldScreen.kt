@@ -37,12 +37,12 @@ fun MainScaffoldScreen(){
     ) { paddingValues ->
 
         when(screenViewModel.currentScreen){
-            Screen.Home -> HomeScreen(navController, paddingValues, latestReading, aqiValues, overallAQI, themeColor)
+            Screen.Home -> HomeScreen(paddingValues, latestReading, aqiValues, overallAQI, themeColor)
             Screen.Analytics -> AnalyticsScreen(navController, paddingValues)
-            Screen.Info -> InfoScreen(navController, paddingValues)
-            Screen.Settings -> SettingsScreen(navController, paddingValues)
+            Screen.Info -> InfoScreen(paddingValues, themeColor)
+            Screen.Settings -> SettingsScreen(navController,paddingValues, themeColor)
 
-            else -> HomeScreen(navController, paddingValues, latestReading, aqiValues, overallAQI, themeColor)
+            else -> HomeScreen(paddingValues, latestReading, aqiValues, overallAQI, themeColor)
         }
 
     }

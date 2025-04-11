@@ -34,15 +34,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.vikram.airsageai.R
 import com.vikram.airsageai.ui.components.CircularSpeedIndicator
 import com.vikram.airsageai.utils.GasReading
 import com.vikram.airsageai.utils.GasState
 
 @Composable
-fun HomeScreen(navController: NavController,
-               paddingValues: PaddingValues,
+fun HomeScreen(paddingValues: PaddingValues,
                latestReading: GasReading?,
                aqiValues: Map<String, Int>? = null,
                overallAQI: Int? = null,

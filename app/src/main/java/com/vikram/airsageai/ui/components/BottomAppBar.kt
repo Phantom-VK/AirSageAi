@@ -106,7 +106,7 @@ fun BottomBarItem(
             painter = painterResource(id = iconRes),
             contentDescription = label,
             tint = iconColor,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(30.dp)
         )
         Text(
             text = label,
