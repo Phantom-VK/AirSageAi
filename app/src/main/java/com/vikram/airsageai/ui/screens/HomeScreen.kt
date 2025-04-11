@@ -32,17 +32,13 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.vikram.airsageai.R
 import com.vikram.airsageai.ui.components.CircularSpeedIndicator
 import com.vikram.airsageai.utils.GasReading
 import com.vikram.airsageai.utils.GasState
-import com.vikram.airsageai.viewmodels.GasDataViewModel
-import kotlin.ranges.contains
 
 @Composable
 fun HomeScreen(navController: NavController,
@@ -51,11 +47,6 @@ fun HomeScreen(navController: NavController,
                aqiValues: Map<String, Int>? = null,
                overallAQI: Int? = null,
                themeColor: Color) {
-
-
-
-
-
 
     LazyColumn(
         modifier = Modifier
@@ -302,19 +293,3 @@ fun ObservationCard(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ObservationCardPreview() {
-    ObservationCard(
-        title = "Carbon Monoxide",
-        gasValue = 150f
-    )
-}
-
-
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun PreviewAirQualityIndexScreen() {
-//    AirQualityIndexScreen()
-//}

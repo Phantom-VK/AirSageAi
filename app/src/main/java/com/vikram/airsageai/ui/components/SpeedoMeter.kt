@@ -115,15 +115,6 @@ fun CircularSpeedIndicator(
 }
 
 
-@Composable
-private fun getGasStatusText(gasState: GasState): String {
-    return when {
-        gasState.gasValue >= gasState.dangerThreshold -> "DANGER"
-        gasState.gasValue >= gasState.warningThreshold -> "WARNING"
-        else -> "GOOD"
-    }
-}
-
 private fun getStatusColor(gasState: GasState): Color {
     return when {
         gasState.gasValue >= gasState.dangerThreshold -> Color.Red
@@ -132,128 +123,7 @@ private fun getStatusColor(gasState: GasState): Color {
     }
 }
 
-fun DrawScope.drawBackground(angle: Float) {
-    val startAngle = 270f - angle / 2
-    val sweepAngle = angle
 
-    val topLeft = Offset(50f, 50f)
-    val size = Size(size.width - 100f, size.height - 100f)
-
-    // Draw background arc
-    drawArc(
-        color = Color.LightGray.copy(alpha = 0.3f),
-        startAngle = startAngle,
-        sweepAngle = sweepAngle,
-        useCenter = false,
-        topLeft = topLeft,
-        size = size,
-        style = Stroke(width = 40f, cap = StrokeCap.Round)
-    )
-}
-
-fun DrawScope.drawZones(angle: Float, warningThreshold: Float, dangerThreshold: Float) {
-    val startAngle = 270f - angle / 2
-
-    val topLeft = Offset(50f, 50f)
-    val size = Size(size.width - 100f, size.height - 100f)
-
-    // Good zone (green)
-    drawArc(
-        color = Color.Green.copy(alpha = 0.7f),
-        startAngle = startAngle,
-        sweepAngle = angle * warningThreshold,
-        useCenter = false,
-        topLeft = topLeft,
-        size = size,
-        style = Stroke(width = 40f, cap = StrokeCap.Round)
-    )
-
-    // Warning zone (yellow)
-    drawArc(
-        color = Color(0xFFFFA500).copy(alpha = 0.7f), // Orange
-        startAngle = startAngle + angle * warningThreshold,
-        sweepAngle = angle * (dangerThreshold - warningThreshold),
-        useCenter = false,
-        topLeft = topLeft,
-        size = size,
-        style = Stroke(width = 40f, cap = StrokeCap.Round)
-    )
-
-    // Danger zone (red)
-    drawArc(
-        color = Color.Red.copy(alpha = 0.7f),
-        startAngle = startAngle + angle * dangerThreshold,
-        sweepAngle = angle * (1f - dangerThreshold),
-        useCenter = false,
-        topLeft = topLeft,
-        size = size,
-        style = Stroke(width = 40f, cap = StrokeCap.Round)
-    )
-}
-
-fun DrawScope.drawProgressArc(progress: Float, angle: Float) {
-    val startAngle = 270f - angle / 2
-    val sweepAngle = angle * progress
-
-    val topLeft = Offset(50f, 50f)
-    val size = Size(size.width - 100f, size.height - 100f)
-
-    // Draw progress indicator
-    drawArc(
-        color = Color.White,
-        startAngle = startAngle,
-        sweepAngle = sweepAngle,
-        useCenter = false,
-        topLeft = topLeft,
-        size = size,
-        style = Stroke(width = 12f, cap = StrokeCap.Round)
-    )
-}
-
-fun DrawScope.drawNeedle(progress: Float, angle: Float) {
-    val needleLength = min(size.width, size.height) * 0.35f
-    val needleRotation = progress * angle - angle / 2
-
-    rotate(needleRotation) {
-        drawLine(
-            brush = SolidColor(Color.White),
-            start = center,
-            end = Offset(center.x, center.y - needleLength),
-            strokeWidth = 8f,
-            cap = StrokeCap.Round
-        )
-
-        // Draw needle center
-        drawCircle(
-            color = Color.White,
-            radius = 15f,
-            center = center
-        )
-
-        drawCircle(
-            color = Color.DarkGray,
-            radius = 8f,
-            center = center
-        )
-    }
-}
-
-fun DrawScope.drawLines(progress: Float, angle: Float, numberOfLines: Int = 20) {
-    val startAngle = 270f - angle / 2
-
-    for (i in 0..numberOfLines) {
-        val lineRotation = startAngle + (i.toFloat() / numberOfLines) * angle
-        rotate(lineRotation) {
-            drawLine(
-                color = LightColor,
-                start = Offset(center.x, 50f),
-                end = Offset(center.x, if (i % 5 == 0) 80f else 95f),
-                strokeWidth = if (i % 5 == 0) 3f else 1.5f,
-                cap = StrokeCap.Round
-            )
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
