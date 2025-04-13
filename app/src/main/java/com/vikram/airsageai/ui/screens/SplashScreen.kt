@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -19,7 +20,12 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(navController: NavHostController) {
+
+    val context = LocalContext.current
+
+
     LaunchedEffect(Unit) {
+
         delay(2000L)
         navController.navigate(Screen.MainScaffold.route) {
             popUpTo(Screen.SplashScreen.route) { inclusive = true }

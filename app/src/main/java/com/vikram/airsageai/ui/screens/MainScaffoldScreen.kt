@@ -6,19 +6,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.vikram.airsageai.ui.components.AppBottomBar
-import com.vikram.airsageai.viewmodels.GasDataViewModel
+import com.vikram.airsageai.utils.GasReading
 import com.vikram.airsageai.viewmodels.ScreenViewModel
 
 @Composable
-fun MainScaffoldScreen(){
+fun MainScaffoldScreen(
+    latestReading: GasReading?,
+    aqiValues: Map<String, Int>?,
+    overallAQI: Int?
+){
     val navController = rememberNavController()
-    val screenViewModel: ScreenViewModel = viewModel()
-    // Get the latest reading from the ViewModel
-    val gasDataViewModel: GasDataViewModel = viewModel()
-    val latestReading = gasDataViewModel.latestReading.value
 
-    val aqiValues = latestReading?.toAQI()
-    val overallAQI = latestReading?.overallAQI()
+    val screenViewModel: ScreenViewModel = viewModel()
+
+
+
+
+
 
     var themeColor = when (overallAQI) {
         in 0..50 -> Color(0xFF96D9F3)

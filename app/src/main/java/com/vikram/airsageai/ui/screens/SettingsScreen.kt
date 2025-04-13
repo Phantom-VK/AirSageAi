@@ -22,21 +22,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.vikram.airsageai.MyApp
 import com.vikram.airsageai.ui.components.CustomDropdown
+import com.vikram.airsageai.utils.AQINotificationWorker
+import com.vikram.airsageai.utils.PreferencesManager
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(navController: NavController, paddingValues: PaddingValues, themeColor: Color) {
@@ -44,6 +50,22 @@ fun SettingsScreen(navController: NavController, paddingValues: PaddingValues, t
     var isDarkMode by remember { mutableStateOf(false) }
     var notificationsEnabled by remember { mutableStateOf(true) }
     var selectedLanguage by remember { mutableStateOf("English") }
+
+    val context = LocalContext.current
+    val preferencesManager by lazy {
+        PreferencesManager(context)
+    }
+    val app = context.applicationContext as MyApp
+
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(key1 = true) {
+        preferencesManager.getNotificationEnabled().collect{
+            notificationsEnabled = it
+        }
+    }
+
+
 
     Column(
         modifier = Modifier
@@ -80,7 +102,17 @@ fun SettingsScreen(navController: NavController, paddingValues: PaddingValues, t
                 Text("Enable Notifications", fontSize = 16.sp)
                 Switch(
                     checked = notificationsEnabled,
-                    onCheckedChange = { notificationsEnabled = it }
+                    onCheckedChange = {
+                        notificationsEnabled = it
+                        coroutineScope.launch {
+                            preferencesManager.setNotificationEnabled(it)
+                        }
+                        if (it) {
+                            app.scheduleAQINotificationWorker(context)
+                        } else {
+                            app.cancelAQINotificationWorker(context)
+                        }
+                    }
                 )
             }
         }
@@ -137,7 +169,8 @@ fun SettingsScreen(navController: NavController, paddingValues: PaddingValues, t
 @Composable
 fun SettingCard(title: String,color: Color, content: @Composable ColumnScope.() -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
             .padding(10.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
