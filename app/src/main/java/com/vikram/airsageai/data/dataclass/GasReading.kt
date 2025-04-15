@@ -1,4 +1,4 @@
-package com.vikram.airsageai.utils
+package com.vikram.airsageai.data.dataclass
 
 import com.google.firebase.database.PropertyName
 import kotlin.math.roundToInt

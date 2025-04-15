@@ -1,7 +1,12 @@
 package com.vikram.airsageai.ui.screens
 
+import LocationViewModel
+import LocationViewModelFactory
+import android.Manifest
+import android.R.attr.fontWeight
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,33 +23,50 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.vikram.airsageai.R
+import com.vikram.airsageai.data.dataclass.GasReading
+import com.vikram.airsageai.data.dataclass.GasState
 import com.vikram.airsageai.ui.components.CircularSpeedIndicator
-import com.vikram.airsageai.utils.GasReading
-import com.vikram.airsageai.utils.GasState
+import com.vikram.airsageai.utils.LocationUtils
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(paddingValues: PaddingValues,
                latestReading: GasReading?,
                aqiValues: Map<String, Int>? = null,
                overallAQI: Int? = null,
                themeColor: Color) {
+
+
 
     LazyColumn(
         modifier = Modifier
@@ -62,21 +84,46 @@ fun HomeScreen(paddingValues: PaddingValues,
 
 
 @Composable
-fun TopAppBar() {
+fun TopAppBar(
+    onBackClick: () -> Unit = {}
+) {
+    val context = LocalContext.current
+    val locationUtils = remember { LocationUtils(context) }
+    val viewModelFactory = remember { LocationViewModelFactory(locationUtils, context) }
+    val locationVM: LocationViewModel = viewModel(factory = viewModelFactory)
+
+//    val location by locationVM.location.collectAsState()
+    val locationName by locationVM.locationName.collectAsState()
+    val errorMessage by locationVM.error.collectAsState()
+
+    val currentDate by remember {
+        mutableStateOf(
+            SimpleDateFormat("d MMMM yyyy", Locale.getDefault())
+                .format(Date())
+        )
+    }
+
+    // Fetch location when the component is first composed
+    LaunchedEffect(key1 = Unit) {
+        locationVM.fetchLocation()
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Back button
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = "Back",
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier
+                .size(24.dp)
+                .clickable { onBackClick() }
         )
 
-        // Location with dropdown
+        // Location Display
         Row(
             modifier = Modifier
                 .weight(1f)
@@ -85,20 +132,20 @@ fun TopAppBar() {
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Vishnupuri, Nanded",
-                fontSize = 20.sp,
+                text = locationName,
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Bold
             )
             Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "Select location"
+                imageVector = Icons.Default.LocationOn,
+                contentDescription = "Current location"
             )
         }
 
         // Date display
         Text(
-            text = "5 April 2025",
-            fontSize = 14.sp,
+            text = currentDate,
+            fontSize = 18.sp,
             color = Color.DarkGray
         )
     }
@@ -118,12 +165,11 @@ fun AQIDisplay(aqi: Int?) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(320.dp)
+            .height(400.dp)
             .clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
     ) {
 
-        // This would be your actual background scenery image
-        // Replace R.drawable.landscape_background with your actual drawable
+
 
         Image(
             painter = image,

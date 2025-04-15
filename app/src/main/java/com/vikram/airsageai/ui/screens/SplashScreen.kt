@@ -21,7 +21,6 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(navController: NavHostController) {
 
-    val context = LocalContext.current
 
 
     LaunchedEffect(Unit) {

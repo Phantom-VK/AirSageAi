@@ -40,7 +40,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.vikram.airsageai.MyApp
 import com.vikram.airsageai.ui.components.CustomDropdown
-import com.vikram.airsageai.utils.AQINotificationWorker
 import com.vikram.airsageai.utils.PreferencesManager
 import kotlinx.coroutines.launch
 

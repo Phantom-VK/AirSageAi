@@ -1,14 +1,20 @@
 package com.vikram.airsageai.ui.screens
 
+import android.Manifest
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.vikram.airsageai.ui.components.AppBottomBar
-import com.vikram.airsageai.utils.GasReading
+import com.vikram.airsageai.data.dataclass.GasReading
 import com.vikram.airsageai.viewmodels.ScreenViewModel
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MainScaffoldScreen(
     latestReading: GasReading?,
@@ -20,7 +26,19 @@ fun MainScaffoldScreen(
     val screenViewModel: ScreenViewModel = viewModel()
 
 
+    val permissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    )
+    LaunchedEffect(permissionsState.allPermissionsGranted) {
 
+        if (!permissionsState.permissions.any { it.status.isGranted }) {
+            permissionsState.launchMultiplePermissionRequest()
+        }
+
+    }
 
 
 

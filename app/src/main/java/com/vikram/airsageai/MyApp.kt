@@ -11,7 +11,7 @@ import androidx.work.WorkManager
 import com.vikram.airsageai.utils.AQINotificationWorker
 import java.util.concurrent.TimeUnit
 
-class MyApp : Application() {
+class MyApp : Application()  {
 
 
 

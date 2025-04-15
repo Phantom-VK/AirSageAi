@@ -1,4 +1,4 @@
-package com.vikram.airsageai.utils
+package com.vikram.airsageai.data.dataclass
 
 data class GasState(
     val gasValue: Float,

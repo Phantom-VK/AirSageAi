@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import com.vikram.airsageai.utils.GasReading
+import com.vikram.airsageai.data.dataclass.GasReading
 
 class GasDataViewModel : ViewModel() {
 

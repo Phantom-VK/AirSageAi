@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services)
+    id("kotlin-kapt")
+
 }
 
 android {
@@ -53,6 +55,12 @@ dependencies {
 
     implementation("androidx.work:work-runtime-ktx:2.10.0")
 
+    implementation("com.google.maps.android:maps-compose:6.4.1")
+
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation( "androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -72,4 +80,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
 
+}
+kapt {
+    correctErrorTypes=true
 }
