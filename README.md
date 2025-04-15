@@ -38,8 +38,6 @@ Designed with **Figma** for clean, modern UI and built with the latest Android t
   </tr>
 </table>
 
-> 📌 Replace the above placeholders with real screenshots from your app (Figma → Export → PNG).
-
 ---
 
 ## 🧱 Tech Stack
