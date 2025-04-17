@@ -22,15 +22,6 @@ import kotlinx.coroutines.delay
 fun SplashScreen(navController: NavHostController) {
 
 
-
-    LaunchedEffect(Unit) {
-
-        delay(2000L)
-        navController.navigate(Screen.MainScaffold.route) {
-            popUpTo(Screen.SplashScreen.route) { inclusive = true }
-        }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -38,7 +29,7 @@ fun SplashScreen(navController: NavHostController) {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.airsage_logo_withname),
+            painter = painterResource(id = R.drawable.airsage_logo),
             contentDescription = "App Logo",
             modifier = Modifier.size(120.dp)
         )

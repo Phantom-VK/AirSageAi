@@ -2,8 +2,6 @@ package com.vikram.airsageai.ui.screens
 
 import LocationViewModel
 import LocationViewModelFactory
-import android.Manifest
-import android.R.attr.fontWeight
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,8 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.vikram.airsageai.R
 import com.vikram.airsageai.data.dataclass.GasReading
 import com.vikram.airsageai.data.dataclass.GasState

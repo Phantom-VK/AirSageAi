@@ -1,5 +1,7 @@
 package com.vikram.airsageai
 
+import LocationViewModel
+import LocationViewModelFactory
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -35,15 +37,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.vikram.airsageai.ui.navigation.Navigation
 import com.vikram.airsageai.ui.screens.SplashScreen
+import com.vikram.airsageai.utils.LocationUtils
 import com.vikram.airsageai.viewmodels.GasDataViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val context = LocalContext.current
             val gasDataViewModel: GasDataViewModel = viewModel()
             val navController = rememberNavController()
-            val context = LocalContext.current
+            val locationUtils = remember { LocationUtils(context) }
+            val viewModelFactory = remember { LocationViewModelFactory(locationUtils, context) }
+            val locationVM: LocationViewModel = viewModel(factory = viewModelFactory)
 
             // State for tracking permission status
             var permissionState by remember {
@@ -64,6 +70,7 @@ class MainActivity : ComponentActivity() {
                     PermissionState.DENIED
                 }
             }
+
 
             // Request location permissions
             val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -112,6 +119,7 @@ class MainActivity : ComponentActivity() {
 
             // Check and request permissions when app starts
             LaunchedEffect(Unit) {
+
                 // Check current permission status
                 val hasFineLocation = ContextCompat.checkSelfPermission(
                     context,

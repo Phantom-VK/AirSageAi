@@ -21,10 +21,9 @@ fun Navigation(
     val aqiValues = latestReading?.toAQI()
     val overallAQI = latestReading?.overallAQI()
 
-
     NavHost(
         navController = navController,
-        startDestination = Screen.SplashScreen.route
+        startDestination = Screen.MainScaffold.route
     ) {
 
         composable(Screen.MainScaffold.route){
@@ -37,11 +36,7 @@ fun Navigation(
 
         composable(Screen.SplashScreen.route){
             SplashScreen(navController)
-
         }
-
-
-
 
     }
 }
