@@ -13,13 +13,9 @@ import com.vikram.airsageai.viewmodels.GasDataViewModel
 
 @Composable
 fun Navigation(
-    navController: NavHostController,
-    gasDataViewModel: GasDataViewModel
+    navController: NavHostController
 ) {
 
-    val latestReading = gasDataViewModel.latestReading.value
-    val aqiValues = latestReading?.toAQI()
-    val overallAQI = latestReading?.overallAQI()
 
     NavHost(
         navController = navController,
@@ -27,15 +23,11 @@ fun Navigation(
     ) {
 
         composable(Screen.MainScaffold.route){
-            MainScaffoldScreen(
-                latestReading = latestReading,
-                aqiValues = aqiValues,
-                overallAQI = overallAQI
-            )
+            MainScaffoldScreen()
         }
 
         composable(Screen.SplashScreen.route){
-            SplashScreen(navController)
+            SplashScreen()
         }
 
     }

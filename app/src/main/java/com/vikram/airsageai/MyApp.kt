@@ -9,8 +9,11 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.vikram.airsageai.utils.AQINotificationWorker
+import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.TimeUnit
 
+
+@HiltAndroidApp
 class MyApp : Application()  {
 
 

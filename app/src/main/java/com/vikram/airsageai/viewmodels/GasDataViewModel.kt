@@ -1,61 +1,45 @@
+// GasDataViewModel.kt
 package com.vikram.airsageai.viewmodels
 
-import android.util.Log
-import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
-import com.google.firebase.database.*
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
+import androidx.lifecycle.viewModelScope
 import com.vikram.airsageai.data.dataclass.GasReading
+import com.vikram.airsageai.data.repository.FirebaseDatabaseRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class GasDataViewModel : ViewModel() {
+@HiltViewModel
+class GasDataViewModel @Inject constructor(
+    private val repository: FirebaseDatabaseRepository
+) : ViewModel() {
+    private val _latestReading = MutableStateFlow<GasReading?>(null)
+    val latestReading: StateFlow<GasReading?> = _latestReading
 
-    private val database = Firebase.database
-    private val gasRef = database.getReference("test_data")
-
-    // For latest reading only
-    private var _latestReading = mutableStateOf<GasReading?>(null)
-    val latestReading: State<GasReading?> = _latestReading
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
 
     init {
-//        gasRef.removeValue()
         fetchLatestGasReading()
     }
 
     private fun fetchLatestGasReading() {
-        gasRef
-            .limitToLast(1)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    // Since it's an array, snapshot.children is an iterable of entries
-                    for (data in snapshot.children) {
-                        val readingMap = data.value as? Map<String, Any>
-                        Log.d("Firebase", "Received data: $readingMap")
-                        if (readingMap != null) {
-                            try {
-                                val reading = GasReading(
-                                    CO_PPM = readingMap["CO (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                    CO2_PPM = readingMap["CO2 (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                    NH3_PPM = readingMap["NH3 (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                    NOx_PPM = readingMap["NOx (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                    LPG_PPM = readingMap["LPG (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                    Methane_PPM = readingMap["Methane (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                    Hydrogen_PPM = readingMap["Hydrogen (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0
-                                )
-                                _latestReading.value = reading
-                                Log.d("Firebase", "Parsed reading: $reading")
-                            } catch (e: Exception) {
-                                Log.e("Firebase", "Parsing failed", e)
-                            }
-                        }
-                    }
+        viewModelScope.launch {
+            repository.getLatestGasReading()
+                .collectLatest { reading ->
+                    _latestReading.value = reading
                 }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("Firebase", "Data fetch cancelled", error.toException())
-                }
-            })
+        }
     }
 
-
+    suspend fun saveReading(reading: GasReading) {
+        try {
+            repository.saveGasReading(reading)
+        } catch (e: Exception) {
+            _error.value = "Failed to save reading: ${e.message}"
+        }
+    }
 }

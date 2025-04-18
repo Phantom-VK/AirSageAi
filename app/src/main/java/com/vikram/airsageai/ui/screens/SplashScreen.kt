@@ -19,7 +19,7 @@ import kotlinx.coroutines.delay
 
 
 @Composable
-fun SplashScreen(navController: NavHostController) {
+fun SplashScreen() {
 
 
     Box(
@@ -31,7 +31,7 @@ fun SplashScreen(navController: NavHostController) {
         Image(
             painter = painterResource(id = R.drawable.airsage_logo),
             contentDescription = "App Logo",
-            modifier = Modifier.size(120.dp)
+            modifier = Modifier.size(200.dp)
         )
     }
 }

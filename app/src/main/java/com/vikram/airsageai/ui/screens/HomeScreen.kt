@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,11 +57,12 @@ import java.util.Locale
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun HomeScreen(paddingValues: PaddingValues,
-               latestReading: GasReading?,
-               aqiValues: Map<String, Int>? = null,
-               overallAQI: Int? = null,
-               themeColor: Color) {
+fun HomeScreen(
+    paddingValues: PaddingValues,
+    latestReading: State<GasReading?>,
+    overallAQI: Int? = null,
+    themeColor: Color
+) {
 
 
 
@@ -204,15 +206,15 @@ fun AQIDisplay(aqi: Int?) {
 
 @Composable
 fun ObservationsGrid(
-    gasReading: GasReading?
+    gasReading: State<GasReading?>
 ) {
-    val CO = gasReading?.CO_PPM?.toFloat() ?: 0f
-    val CO2 = gasReading?.CO2_PPM?.toFloat() ?: 0f
-    val NH3 = gasReading?.NH3_PPM?.toFloat() ?: 0f
-    val NOx = gasReading?.NOx_PPM?.toFloat() ?: 0f
-    val LPG = gasReading?.LPG_PPM?.toFloat() ?: 0f
-    val Methane = gasReading?.Methane_PPM?.toFloat() ?: 0f
-    val Hydrogen = gasReading?.Hydrogen_PPM?.toFloat() ?: 0f
+    val CO = gasReading.value?.CO_PPM?.toFloat()?:0f
+    val CO2 = gasReading.value?.CO2_PPM?.toFloat()?:0f
+    val NH3 = gasReading.value?.NH3_PPM?.toFloat()?:0f
+    val NOx = gasReading.value?.NOx_PPM?.toFloat()?:0f
+    val LPG = gasReading.value?.LPG_PPM?.toFloat()?:0f
+    val Methane = gasReading.value?.Methane_PPM?.toFloat()?:0f
+    val Hydrogen = gasReading.value?.Hydrogen_PPM?.toFloat()?:0f
 
 
     Column(
