@@ -1,4 +1,3 @@
-// GasDataViewModel.kt
 package com.vikram.airsageai.viewmodels
 
 import androidx.lifecycle.ViewModel

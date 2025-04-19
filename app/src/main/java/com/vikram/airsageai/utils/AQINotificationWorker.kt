@@ -1,7 +1,9 @@
 package com.vikram.airsageai.utils
 
+import ConversionUtils
 import android.app.NotificationManager
 import android.content.Context
+import android.icu.lang.UCharacter.LineBreak.H2
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
@@ -26,7 +28,8 @@ class AQINotificationWorker(
 ) : CoroutineWorker(context, workerParams) {
     private val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val database = Firebase.database
-    private val gasRef = database.getReference("test_data")
+    private val gasRef = database.getReference("gas_logs")
+    private val converter = ConversionUtils()
 
     override suspend fun doWork(): Result {
         try {
@@ -66,14 +69,24 @@ class AQINotificationWorker(
                         Log.d("AQIWorker", "Received data: $readingMap")
 
                         if (readingMap != null) {
-                            reading = GasReading(
-                                CO_PPM = readingMap["CO (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                CO2_PPM = readingMap["CO2 (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                NH3_PPM = readingMap["NH3 (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                NOx_PPM = readingMap["NOx (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                LPG_PPM = readingMap["LPG (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                Methane_PPM = readingMap["Methane (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0,
-                                Hydrogen_PPM = readingMap["Hydrogen (PPM)"]?.toString()?.toDoubleOrNull() ?: 0.0
+
+                            val rawCO = readingMap["CO"]?.toString()?.toInt() ?: 0
+                            val rawBenzene = readingMap["Benzen"]?.toString()?.toInt() ?: 0  // Note: Fixed typo in key name
+                            val rawNH3 = readingMap["NH3"]?.toString()?.toInt() ?: 0
+                            val rawSmoke = readingMap["Smoke"]?.toString()?.toInt() ?: 0
+                            val rawLPG = readingMap["LPG"]?.toString()?.toInt() ?: 0
+                            val rawCH4 = readingMap["CH4"]?.toString()?.toInt() ?: 0
+                            val rawH2 = readingMap["H2"]?.toString()?.toInt() ?: 0
+
+                             reading = GasReading(
+                                CO = converter.convertCO(rawCO),
+                                Benzene = converter.convertBenzene(rawBenzene),
+                                NH3 = converter.convertNH3(rawNH3),
+                                Smoke = converter.convertSmoke(rawSmoke),
+                                LPG = converter.convertLPG(rawLPG),
+                                CH4 = converter.convertCH4(rawCH4),
+                                H2 = converter.convertH2(rawH2),
+                                Time = readingMap["Time"].toString()
                             )
                             Log.d("AQIWorker", "Parsed reading: $reading")
                         }

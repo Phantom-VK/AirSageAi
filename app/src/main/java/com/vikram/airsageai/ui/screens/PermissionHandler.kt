@@ -30,8 +30,7 @@ import com.vikram.airsageai.viewmodels.GasDataViewModel
 
 @Composable
 fun PermissionHandler(
-    navController: NavHostController,
-    gasDataViewModel: GasDataViewModel
+    navController: NavHostController
 ) {
     val context = LocalContext.current
     val locationUtils = remember { LocationUtils(context) }

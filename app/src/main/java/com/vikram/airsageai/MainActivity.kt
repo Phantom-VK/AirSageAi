@@ -18,7 +18,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val gasDataViewModel: GasDataViewModel = hiltViewModel()
             val navController = rememberNavController()
 
             Surface(
@@ -26,8 +25,7 @@ class MainActivity : ComponentActivity() {
                 color = MaterialTheme.colorScheme.background
             ) {
                 PermissionHandler(
-                    navController = navController,
-                    gasDataViewModel = gasDataViewModel
+                    navController = navController
                 )
             }
         }
