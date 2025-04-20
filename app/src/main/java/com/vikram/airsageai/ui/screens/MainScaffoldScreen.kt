@@ -1,11 +1,34 @@
 package com.vikram.airsageai.ui.screens
 
 import android.Manifest
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
@@ -18,14 +41,26 @@ import com.vikram.airsageai.viewmodels.ScreenViewModel
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun MainScaffoldScreen(){
+fun MainScaffoldScreen() {
     val navController = rememberNavController()
 
     val screenViewModel: ScreenViewModel = viewModel()
     val gasDataViewModel: GasDataViewModel = hiltViewModel()
-    val latestReading = gasDataViewModel.latestReading.collectAsState()
-    val overallAQI = gasDataViewModel.latestReading.collectAsState().value?.overallAQI()
 
+    // Collect data states
+    val latestReadingState = gasDataViewModel.latestReadingState.collectAsState()
+    val weeklyReadingState = gasDataViewModel.weeklyReadingState.collectAsState()
+
+    // Create a wrapped State for the extracted data to match the expected types
+    val latestReading = remember { derivedStateOf {
+        (latestReadingState.value as? GasDataViewModel.DataState.Success)?.data
+    }}
+
+    // Determine AQI based on latest reading state
+    val overallAQI = when (val state = latestReadingState.value) {
+        is GasDataViewModel.DataState.Success -> state.data?.overallAQI()
+        else -> null
+    }
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -33,41 +68,188 @@ fun MainScaffoldScreen(){
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
     )
-    LaunchedEffect(permissionsState.allPermissionsGranted) {
 
+    LaunchedEffect(permissionsState.allPermissionsGranted) {
         if (!permissionsState.permissions.any { it.status.isGranted }) {
             permissionsState.launchMultiplePermissionRequest()
         }
-
     }
 
-
-
+    // Default theme color is light blue, changes based on AQI
     var themeColor = when (overallAQI) {
-        in 0..50 -> Color(0xFF96D9F3)
-        in 51..100 -> Color(0xFFFCEFCC)
-        else -> Color(0xFFFFC2A5)
+        in 0..50 -> Color(0xFF96D9F3)  // Good - Blue
+        in 51..100 -> Color(0xFFFCEFCC) // Moderate - Yellow
+        else -> Color(0xFFFFC2A5)       // Poor - Orange/Red
     }
-
-
 
     Scaffold(
         bottomBar = {
-            AppBottomBar(
-                themeColor
-            )
+            AppBottomBar(themeColor)
         }
     ) { paddingValues ->
+        // Check if any data is still loading
+        val isLoading = latestReadingState.value is GasDataViewModel.DataState.Loading ||
+                weeklyReadingState.value is GasDataViewModel.DataState.Loading
 
-        when(screenViewModel.currentScreen){
-            Screen.Home -> HomeScreen(paddingValues, latestReading = latestReading, overallAQI, themeColor)
-            Screen.Analytics -> AnalyticsScreen(navController, paddingValues)
-            Screen.Info -> InfoScreen(paddingValues, themeColor)
-            Screen.Settings -> SettingsScreen(navController,paddingValues, themeColor)
+        // Check for errors
+        val hasError = latestReadingState.value is GasDataViewModel.DataState.Error ||
+                weeklyReadingState.value is GasDataViewModel.DataState.Error
 
-            else -> HomeScreen(paddingValues, latestReading, overallAQI, themeColor)
+        when {
+            isLoading -> {
+                LoadingScreen(themeColor)
+            }
+            hasError -> {
+                ErrorScreen(
+                    latestReadingError = (latestReadingState.value as? GasDataViewModel.DataState.Error)?.message,
+                    weeklyReadingError = (weeklyReadingState.value as? GasDataViewModel.DataState.Error)?.message,
+                    onRetryLatest = { gasDataViewModel.retryLatestReading() },
+                    onRetryWeekly = { gasDataViewModel.retryWeeklyReadings() },
+                    themeColor = themeColor
+                )
+            }
+            else -> {
+                // Get the weekly readings list directly
+                val last7DaysReading = (weeklyReadingState.value as? GasDataViewModel.DataState.Success)?.data ?: emptyList()
+
+                when (screenViewModel.currentScreen) {
+                    Screen.Home -> HomeScreen(paddingValues, latestReading, overallAQI, themeColor)
+                    Screen.Analytics -> AnalyticsScreen(paddingValues, themeColor, last7DaysReading)
+                    Screen.Info -> InfoScreen(paddingValues, themeColor)
+                    Screen.Settings -> SettingsScreen(navController, paddingValues, themeColor)
+                    else -> HomeScreen(paddingValues, latestReading, overallAQI, themeColor)
+                }
+            }
         }
+    }
+}
 
+@Composable
+fun LoadingScreen(themeColor: Color) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(themeColor.copy(alpha = 0.3f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator(
+                color = themeColor,
+                modifier = Modifier.size(60.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Loading air quality data...",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Please wait while we fetch the latest readings",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.LightGray,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun ErrorScreen(
+    latestReadingError: String?,
+    weeklyReadingError: String?,
+    onRetryLatest: () -> Unit,
+    onRetryWeekly: () -> Unit,
+    themeColor: Color
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Error",
+                tint = Color.Red,
+                modifier = Modifier.size(64.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Unable to load data",
+                style = MaterialTheme.typography.headlineLarge,
+                color = Color.Black
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Show specific error messages if available
+            latestReadingError?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Red,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = onRetryLatest,
+                    colors = ButtonDefaults.buttonColors(containerColor = themeColor)
+                ) {
+                    Text("Retry Loading Latest Reading")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            weeklyReadingError?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Red,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = onRetryWeekly,
+                    colors = ButtonDefaults.buttonColors(containerColor = themeColor)
+                ) {
+                    Text("Retry Loading Weekly Readings")
+                }
+            }
+
+            // If no specific errors, show a general retry button
+            if (latestReadingError == null && weeklyReadingError == null) {
+                Button(
+                    onClick = {
+                        onRetryLatest()
+                        onRetryWeekly()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = themeColor)
+                ) {
+                    Text("Retry")
+                }
+            }
+        }
     }
 }
 

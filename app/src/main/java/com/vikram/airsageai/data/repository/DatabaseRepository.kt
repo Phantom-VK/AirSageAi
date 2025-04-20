@@ -6,5 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface DatabaseRepository {
     fun getLatestGasReading(): Flow<GasReading?>
+    fun getLast7DaysReadings(): Flow<List<GasReading>>
     suspend fun saveGasReading(reading: GasReading)
 }

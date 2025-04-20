@@ -77,6 +77,10 @@ dependencies {
     // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.10.0")
 
+
+    //Linechart
+    implementation ("io.github.ehsannarmani:compose-charts:0.1.2")
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

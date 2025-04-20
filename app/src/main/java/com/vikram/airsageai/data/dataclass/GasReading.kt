@@ -9,7 +9,7 @@ data class GasReading(
     var CO: Double? = null,
 
     @get:PropertyName("Benzene")
-    @set:PropertyName("Benzene ")
+    @set:PropertyName("Benzene")
     var Benzene: Double? = null,
 
     @get:PropertyName("NH3")

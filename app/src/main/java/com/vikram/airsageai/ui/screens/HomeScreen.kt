@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.vikram.airsageai.R
@@ -61,7 +61,6 @@ import com.vikram.airsageai.utils.LocationUtils
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.core.graphics.toColorInt
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -93,11 +92,11 @@ fun HomeScreen(
     ) {
         items(1) {
             AQIDisplay(overallAQI, aqiCategory, aqiColor)
+            ObservationsGrid(latestReading)
+            Spacer(modifier = Modifier.height(16.dp))
             HealthInfoCard(healthImplications, aqiColor)
             Spacer(modifier = Modifier.height(16.dp))
             PollutantLevelsSection(latestReading)
-            Spacer(modifier = Modifier.height(16.dp))
-            ObservationsGrid(latestReading)
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
@@ -129,8 +128,7 @@ fun TopAppBar(
 
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 10.dp),
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Back button
@@ -138,7 +136,7 @@ fun TopAppBar(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = "Back",
             modifier = Modifier
-                .size(24.dp)
+                .size(30.dp)
                 .clickable { onBackClick() }
         )
 
@@ -172,7 +170,7 @@ fun TopAppBar(
 
 @Composable
 fun AQIDisplay(aqi: Int?, aqiCategory: String, aqiColor: Color) {
-    var image: Painter = painterResource(id = R.drawable.good_weather)
+    var image: Painter= painterResource(id = R.drawable.good_weather)
 
     image = when (aqi) {
         in 0..50 -> painterResource(id = R.drawable.good_weather)
@@ -217,7 +215,8 @@ fun AQIDisplay(aqi: Int?, aqiCategory: String, aqiColor: Color) {
             ) {
                 Text(
                     text = aqiCategory,
-                    fontSize = 28.sp,
+                    fontSize = 20.sp,
+                    textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
