@@ -77,9 +77,9 @@ fun MainScaffoldScreen() {
 
     // Default theme color is light blue, changes based on AQI
     var themeColor = when (overallAQI) {
-        in 0..50 -> Color(0xFF96D9F3)  // Good - Blue
-        in 51..100 -> Color(0xFFFCEFCC) // Moderate - Yellow
-        else -> Color(0xFFFFC2A5)       // Poor - Orange/Red
+        in 0..50 -> Color(0xFF96D9F3)
+        in 51..100 -> Color(0xFFFCEFCC)
+        else -> Color(0xFFFFC2A5)
     }
 
     Scaffold(
@@ -109,8 +109,10 @@ fun MainScaffoldScreen() {
                 )
             }
             else -> {
-                // Get the weekly readings list directly
-                val last7DaysReading = (weeklyReadingState.value as? GasDataViewModel.DataState.Success)?.data ?: emptyList()
+                val last7DaysReading = remember {
+                    generateDummyGasReadings(48, 30) // 48 readings, 30 minutes each
+                }
+//                    (weeklyReadingState.value as? GasDataViewModel.DataState.Success)?.data ?: emptyList()
 
                 when (screenViewModel.currentScreen) {
                     Screen.Home -> HomeScreen(paddingValues, latestReading, overallAQI, themeColor)

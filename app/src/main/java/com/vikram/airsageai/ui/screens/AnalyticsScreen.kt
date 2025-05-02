@@ -83,43 +83,43 @@ fun AnalyticsScreen(paddingValues: PaddingValues, themeColor: Color, readings:Li
                     Line(
                         label = "CO",
                         values = coReadings,
-                        color = SolidColor(Color(0xFFC0392B)), // Dark Red
+                        color = SolidColor(Color(0xFFC0392B)),
                         curvedEdges = true
                     ),
                     Line(
                         label = "NH3",
                         values = nh3Readings,
-                        color = SolidColor(Color(0xFF27AE60)), // Green
+                        color = SolidColor(Color(0xFF27AE60)),
                         curvedEdges = true
                     ),
                     Line(
                         label = "Benzene",
                         values = benzeneReadings,
-                        color = SolidColor(Color(0xFF9B59B6)), // Purple
+                        color = SolidColor(Color(0xFF9B59B6)),
                         curvedEdges = true
                     ),
                     Line(
                         label = "Hydrogen",
                         values = h2Readings,
-                        color = SolidColor(Color(0xFF3498DB)), // Blue
+                        color = SolidColor(Color(0xFF3498DB)),
                         curvedEdges = true
                     ),
                     Line(
                         label = "Smoke",
                         values = smokeReadings,
-                        color = SolidColor(Color(0xFF777777)), // Gray
+                        color = SolidColor(Color(0xFF777777)),
                         curvedEdges = true
                     ),
                     Line(
                         label = "LPG",
                         values = lpgReadings,
-                        color = SolidColor(Color(0xFFE67E22)), // Orange
+                        color = SolidColor(Color(0xFFE67E22)),
                         curvedEdges = true
                     ),
                     Line(
                         label = "CH4",
                         values = ch4Readings,
-                        color = SolidColor(Color(0xFFF1C40F)), // Yellow
+                        color = SolidColor(Color(0xFFF1C40F)),
                         curvedEdges = true
                     ),
                 )
