@@ -81,6 +81,10 @@ dependencies {
     //Linechart
     implementation ("io.github.ehsannarmani:compose-charts:0.1.2")
 
+    //poi
+    implementation("org.apache.poi:poi:3.9")
+    implementation("org.apache.poi:poi-ooxml:3.9")
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
