@@ -27,7 +27,6 @@ class LocationViewModel(
                 val newLocation = locationUtils.getCurrentLocation()
                 _location.value = newLocation
 
-                // Get location name if we have a valid location
                 newLocation?.let { location ->
                     _locationName.value = locationUtils.getLocationName(
                         context,

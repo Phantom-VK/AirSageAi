@@ -1,7 +1,5 @@
 package com.vikram.airsageai.ui.screens
 
-import LocationViewModel
-import LocationViewModelFactory
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -13,44 +11,26 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vikram.airsageai.data.dataclass.PermissionState
 import com.vikram.airsageai.ui.navigation.Navigation
-import com.vikram.airsageai.utils.LocationUtils
-import com.vikram.airsageai.viewmodels.GasDataViewModel
 
 @Composable
-fun PermissionHandler(
-    navController: NavHostController
-) {
+fun PermissionHandler(navController: NavHostController) {
     val context = LocalContext.current
-    val locationUtils = remember { LocationUtils(context) }
-    val viewModelFactory = remember { LocationViewModelFactory(locationUtils, context) }
-    val locationVM: LocationViewModel = viewModel(factory = viewModelFactory)
 
-    // State for tracking permission status
     var permissionState by remember { mutableStateOf(PermissionState.CHECKING) }
-
-    // State for showing rationale dialog
     var showRationale by remember { mutableStateOf(false) }
 
-    // Define permission launchers
     val permissionLaunchers = setupPermissionLaunchers(
         context = context,
         onPermissionStateChange = { permissionState = it },
         onShowRationale = { showRationale = it }
     )
 
-    // Check and request permissions when composable launches
     LaunchedEffect(Unit) {
         checkAndRequestPermissions(
             context = context,
@@ -59,26 +39,17 @@ fun PermissionHandler(
         )
     }
 
-    // Show appropriate screen based on permission state
     when (permissionState) {
-        PermissionState.CHECKING -> {
-            SplashScreen()
-        }
-        PermissionState.GRANTED -> {
-            Navigation(navController)
-        }
+        PermissionState.CHECKING -> SplashScreen()
+        PermissionState.GRANTED -> Navigation(navController)
         PermissionState.DENIED -> {
             PermissionRequestScreen {
-                val locationPermissions = arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-                permissionLaunchers.locationPermissionLauncher.launch(locationPermissions)
+                val permissions = getRequiredPermissions()
+                permissionLaunchers.locationPermissionLauncher.launch(permissions)
             }
         }
     }
 
-    // Show rationale dialog if needed
     if (showRationale) {
         PermissionRationaleDialog(
             onDismiss = { showRationale = false },
@@ -100,22 +71,18 @@ private fun PermissionRationaleDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Location Permission Required") },
+        title = { Text("Permissions Required") },
         text = {
             Text(
-                "This app needs location permissions to function properly. " +
-                        "Please grant location permissions in app settings."
+                "This app needs location and storage permissions to function properly. " +
+                        "Location is needed for air quality data, and storage is needed to save reports."
             )
         },
         confirmButton = {
-            Button(onClick = onOpenSettings) {
-                Text("Open Settings")
-            }
+            Button(onClick = onOpenSettings) { Text("Open Settings") }
         },
         dismissButton = {
-            Button(onClick = onDismiss) {
-                Text("Later")
-            }
+            Button(onClick = onDismiss) { Text("Later") }
         }
     )
 }
@@ -132,61 +99,46 @@ private fun setupPermissionLaunchers(
     onPermissionStateChange: (PermissionState) -> Unit,
     onShowRationale: (Boolean) -> Unit
 ): PermissionLaunchers {
-    // For Android 10+, background location must be requested separately
     val backgroundLocationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            onPermissionStateChange(PermissionState.GRANTED)
-        } else {
+        if (isGranted) onPermissionStateChange(PermissionState.GRANTED)
+        else {
             onShowRationale(true)
             onPermissionStateChange(PermissionState.DENIED)
         }
     }
 
-    // Request location permissions
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val locationPermissionsGranted = permissions.entries.all { it.value }
+        val allGranted = permissions.entries.all { it.value }
 
-        if (locationPermissionsGranted) {
-            // If basic location permissions granted, check if we need background location
+        if (allGranted) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val hasBackgroundLocation = ContextCompat.checkSelfPermission(
+                val hasBackground = ContextCompat.checkSelfPermission(
                     context,
                     Manifest.permission.ACCESS_BACKGROUND_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
-
-                if (hasBackgroundLocation) {
-                    onPermissionStateChange(PermissionState.GRANTED)
+                if (!hasBackground) {
+                    backgroundLocationPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                 } else {
-                    // Launch background location request separately
-                    backgroundLocationPermissionLauncher.launch(
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                    )
+                    onPermissionStateChange(PermissionState.GRANTED)
                 }
             } else {
                 onPermissionStateChange(PermissionState.GRANTED)
             }
         } else {
-            // Show rationale if permission was denied
             onShowRationale(true)
             onPermissionStateChange(PermissionState.DENIED)
         }
     }
 
-    // Notification permission for Android 13+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { _ ->
-        // We continue regardless of notification permission
-        // Just requesting location permissions after this
-        val locationPermissions = arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-        locationPermissionLauncher.launch(locationPermissions)
+        val permissions = getRequiredPermissions()
+        locationPermissionLauncher.launch(permissions)
     }
 
     return PermissionLaunchers(
@@ -201,40 +153,43 @@ private fun checkAndRequestPermissions(
     permissionLaunchers: PermissionLaunchers,
     onPermissionStateChange: (PermissionState) -> Unit
 ) {
-    // Check current permission status
-    val hasFineLocation = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_FINE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
+    val permissions = getRequiredPermissions()
+    val allGranted = permissions.all {
+        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+    }
 
-    val hasCoarseLocation = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.ACCESS_COARSE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-
-    val hasBackgroundLocation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    val hasBackground = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_BACKGROUND_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
     } else true
 
-    if (hasFineLocation && hasCoarseLocation && hasBackgroundLocation) {
+    if (allGranted && hasBackground) {
         onPermissionStateChange(PermissionState.GRANTED)
     } else {
-        // Start permission request flow
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // For Android 13+, request notification permission first
-            permissionLaunchers.notificationPermissionLauncher.launch(
-                Manifest.permission.POST_NOTIFICATIONS
-            )
+            permissionLaunchers.notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            // For older Android versions, directly request location
-            val locationPermissions = arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-            permissionLaunchers.locationPermissionLauncher.launch(locationPermissions)
+            permissionLaunchers.locationPermissionLauncher.launch(permissions)
         }
     }
+}
+
+private fun getRequiredPermissions(): Array<String> {
+    val basePermissions = mutableListOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    )
+
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        basePermissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        basePermissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    } else {
+        // Android 11+ handles storage differently (scoped storage)
+        // You may want to use SAF or MediaStore APIs instead of asking permission
+        // Optional: Request `MANAGE_EXTERNAL_STORAGE` via special intent (Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+    }
+
+    return basePermissions.toTypedArray()
 }
