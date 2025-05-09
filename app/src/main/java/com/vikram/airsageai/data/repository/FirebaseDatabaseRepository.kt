@@ -1,6 +1,5 @@
 package com.vikram.airsageai.data.repository
 
-import ConversionUtils
 import android.util.Log
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -12,9 +11,8 @@ import com.vikram.airsageai.data.dataclass.GasReading
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.flow.callbackFlow
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -26,7 +24,6 @@ import javax.inject.Singleton
 class FirebaseDatabaseRepository @Inject constructor() : DatabaseRepository {
     private val database = Firebase.database
     private val gasRef = database.getReference("gas_logs")
-    private val converter = ConversionUtils()
 
     // Cache for storing readings
     private val readingsCache = ConcurrentHashMap<String, GasReading>()
@@ -54,22 +51,59 @@ class FirebaseDatabaseRepository @Inject constructor() : DatabaseRepository {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_YEAR, -7)
         val sevenDaysAgoMillis = calendar.timeInMillis
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val sevenDaysAgoDate = dateFormat.format(calendar.time)
 
         // Initial load of past 7 days data
         gasRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
-                    for (data in snapshot.children) {
-                        val readingMap = data.value as? Map<String, Any> ?: continue
-                        val timeString = readingMap["Time"]?.toString() ?: continue
+                    // Iterate through date nodes
+                    for (dateSnapshot in snapshot.children) {
+                        val dateKey = dateSnapshot.key ?: continue
 
-                        // Skip if older than 7 days
-                        val recordTime = getTimeInMillis(timeString)
-                        if (recordTime < sevenDaysAgoMillis) continue
+                        // Check if date is within our 7-day window
+                        try {
+                            val recordDate = dateFormat.parse(dateKey)?.time ?: 0L
+                            if (recordDate < sevenDaysAgoMillis) continue
+                        } catch (e: Exception) {
+                            // If date parsing fails, try to proceed anyway
+                            Log.w("FirebaseDatabaseRepository", "Date format issue: $dateKey", e)
+                        }
 
-                        // Add to cache
-                        val reading = convertToGasReading(readingMap)
-                        readingsCache[data.key ?: continue] = reading
+                        // Iterate through time nodes under this date
+                        for (timeSnapshot in dateSnapshot.children) {
+                            val timeKey = timeSnapshot.key ?: continue
+
+                            // Create a unique key for this reading
+                            val uniqueKey = "$dateKey:$timeKey"
+
+                            // Extract gas readings from this time node
+                            val benzene = timeSnapshot.child("Benzene").getValue(Long::class.java)?.toDouble() ?: 0.0
+                            val ch4 = timeSnapshot.child("CH4").getValue(Long::class.java)?.toDouble() ?: 0.0
+                            val co = timeSnapshot.child("CO").getValue(Long::class.java)?.toDouble() ?: 0.0
+                            val h2 = timeSnapshot.child("H2").getValue(Long::class.java)?.toDouble() ?: 0.0
+                            val lpg = timeSnapshot.child("LPG").getValue(Long::class.java)?.toDouble() ?: 0.0
+                            val nh3 = timeSnapshot.child("NH3").getValue(Long::class.java)?.toDouble() ?: 0.0
+                            val smoke = timeSnapshot.child("Smoke").getValue(Long::class.java)?.toDouble() ?: 0.0
+
+                            // Format the timestamp
+                            val timeString = "$dateKey $timeKey"
+
+                            // Create and store the gas reading
+                            val reading = GasReading(
+                                CO = co,
+                                Benzene = benzene,
+                                NH3 = nh3,
+                                Smoke = smoke,
+                                LPG = lpg,
+                                CH4 = ch4,
+                                H2 = h2,
+                                Time = timeString
+                            )
+
+                            readingsCache[uniqueKey] = reading
+                        }
                     }
 
                     // Update the flow with initial data
@@ -92,52 +126,41 @@ class FirebaseDatabaseRepository @Inject constructor() : DatabaseRepository {
     }
 
     private fun setupChildEventListener() {
+        // For the nested structure, we'll listen for changes at the date level
         childEventListener = object : ChildEventListener {
-            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+            override fun onChildAdded(dateSnapshot: DataSnapshot, previousChildName: String?) {
                 if (!isInitialLoadComplete) return // Skip if initial load not done
 
                 try {
-                    val readingMap = snapshot.value as? Map<String, Any> ?: return
-                    val timeString = readingMap["Time"]?.toString() ?: return
+                    val dateKey = dateSnapshot.key ?: return
 
-                    // Skip if older than 7 days
-                    val calendar = Calendar.getInstance()
-                    calendar.add(Calendar.DAY_OF_YEAR, -7)
-                    val sevenDaysAgoMillis = calendar.timeInMillis
-
-                    val recordTime = getTimeInMillis(timeString)
-                    if (recordTime < sevenDaysAgoMillis) return
-
-                    // Add to cache if new
-                    val key = snapshot.key ?: return
-                    if (!readingsCache.containsKey(key)) {
-                        readingsCache[key] = convertToGasReading(readingMap)
-                        updateCachedFlow()
-                    }
+                    // Check if this is a new date node
+                    processDateNode(dateKey, dateSnapshot)
                 } catch (e: Exception) {
-                    Log.e("FirebaseDatabaseRepository", "Error processing new reading", e)
+                    Log.e("FirebaseDatabaseRepository", "Error processing new date", e)
                 }
             }
 
-            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+            override fun onChildChanged(dateSnapshot: DataSnapshot, previousChildName: String?) {
                 try {
-                    val key = snapshot.key ?: return
-                    val readingMap = snapshot.value as? Map<String, Any> ?: return
+                    val dateKey = dateSnapshot.key ?: return
 
-                    // Update in cache if exists
-                    if (readingsCache.containsKey(key)) {
-                        readingsCache[key] = convertToGasReading(readingMap)
-                        updateCachedFlow()
-                    }
+                    // Process the changed date node
+                    processDateNode(dateKey, dateSnapshot)
                 } catch (e: Exception) {
-                    Log.e("FirebaseDatabaseRepository", "Error processing changed reading", e)
+                    Log.e("FirebaseDatabaseRepository", "Error processing changed date", e)
                 }
             }
 
-            override fun onChildRemoved(snapshot: DataSnapshot) {
-                val key = snapshot.key ?: return
-                if (readingsCache.containsKey(key)) {
-                    readingsCache.remove(key)
+            override fun onChildRemoved(dateSnapshot: DataSnapshot) {
+                val dateKey = dateSnapshot.key ?: return
+
+                // Remove all readings for this date from cache
+                val keysToRemove = readingsCache.keys.filter { it.startsWith("$dateKey:") }
+                keysToRemove.forEach { readingsCache.remove(it) }
+
+                // Update the flow
+                if (keysToRemove.isNotEmpty()) {
                     updateCachedFlow()
                 }
             }
@@ -157,40 +180,80 @@ class FirebaseDatabaseRepository @Inject constructor() : DatabaseRepository {
         }
     }
 
+    private fun processDateNode(dateKey: String, dateSnapshot: DataSnapshot) {
+        // Calculate timestamp for 7 days ago for filtering
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, -7)
+        val sevenDaysAgoMillis = calendar.timeInMillis
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+        // Check if date is within our 7-day window
+        try {
+            val recordDate = dateFormat.parse(dateKey)?.time ?: 0L
+            if (recordDate < sevenDaysAgoMillis) return
+        } catch (e: Exception) {
+            // If date parsing fails, try to proceed anyway
+            Log.w("FirebaseDatabaseRepository", "Date format issue: $dateKey", e)
+        }
+
+        // Process all time nodes under this date
+        for (timeSnapshot in dateSnapshot.children) {
+            val timeKey = timeSnapshot.key ?: continue
+
+            // Create a unique key for this reading
+            val uniqueKey = "$dateKey:$timeKey"
+
+            // Extract gas readings from this time node
+            val benzene = timeSnapshot.child("Benzene").getValue(Long::class.java)?.toDouble() ?: 0.0
+            val ch4 = timeSnapshot.child("CH4").getValue(Long::class.java)?.toDouble() ?: 0.0
+            val co = timeSnapshot.child("CO").getValue(Long::class.java)?.toDouble() ?: 0.0
+            val h2 = timeSnapshot.child("H2").getValue(Long::class.java)?.toDouble() ?: 0.0
+            val lpg = timeSnapshot.child("LPG").getValue(Long::class.java)?.toDouble() ?: 0.0
+            val nh3 = timeSnapshot.child("NH3").getValue(Long::class.java)?.toDouble() ?: 0.0
+            val smoke = timeSnapshot.child("Smoke").getValue(Long::class.java)?.toDouble() ?: 0.0
+
+            // Format the timestamp
+            val timeString = "$dateKey $timeKey"
+
+            // Create and store the gas reading
+            val reading = GasReading(
+                CO = co,
+                Benzene = benzene,
+                NH3 = nh3,
+                Smoke = smoke,
+                LPG = lpg,
+                CH4 = ch4,
+                H2 = h2,
+                Time = timeString
+            )
+
+            readingsCache[uniqueKey] = reading
+        }
+
+        // Update the flow
+        updateCachedFlow()
+    }
+
     // Helper function to get timestamp in milliseconds from string
     private fun getTimeInMillis(timeString: String): Long {
         return try {
             if (timeString.matches(Regex("\\d+"))) {
                 timeString.toLong() // If stored as millis
             } else {
-                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                    .parse(timeString)?.time ?: 0L
+                // Try to parse in the new format "yyyy-MM-dd HH:mm:ss"
+                try {
+                    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                        .parse(timeString)?.time ?: 0L
+                } catch (e: Exception) {
+                    // Fallback to older date format
+                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        .parse(timeString)?.time ?: 0L
+                }
             }
         } catch (e: Exception) {
+            Log.e("FirebaseDatabaseRepository", "Error parsing time: $timeString", e)
             0L
         }
-    }
-
-    // Helper function to convert Firebase data to GasReading object
-    private fun convertToGasReading(readingMap: Map<String, Any>): GasReading {
-        val rawCO = readingMap["CO"]?.toString()?.toInt() ?: 0
-        val rawBenzene = readingMap["Benzene"]?.toString()?.toInt() ?: readingMap["Benzen"]?.toString()?.toInt() ?: 0
-        val rawNH3 = readingMap["NH3"]?.toString()?.toInt() ?: 0
-        val rawSmoke = readingMap["Smoke"]?.toString()?.toInt() ?: 0
-        val rawLPG = readingMap["LPG"]?.toString()?.toInt() ?: 0
-        val rawCH4 = readingMap["CH4"]?.toString()?.toInt() ?: 0
-        val rawH2 = readingMap["H2"]?.toString()?.toInt() ?: 0
-
-        return GasReading(
-            CO = converter.convertCO(rawCO),
-            Benzene = converter.convertBenzene(rawBenzene),
-            NH3 = converter.convertNH3(rawNH3),
-            Smoke = converter.convertSmoke(rawSmoke),
-            LPG = converter.convertLPG(rawLPG),
-            CH4 = converter.convertCH4(rawCH4),
-            H2 = converter.convertH2(rawH2),
-            Time = readingMap["Time"].toString()
-        )
     }
 
     // Update the flow with current cached data (sorted)
@@ -228,49 +291,96 @@ class FirebaseDatabaseRepository @Inject constructor() : DatabaseRepository {
     }
 
     override fun getLatestGasReading(): Flow<GasReading?> = callbackFlow {
-        val valueEventListener = object : ValueEventListener {
+        // Create a listener for changes at the top-level date nodes
+        val dateEventListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                for (data in snapshot.children) {
-                    val readingMap = data.value as Map<String, Any>
+                try {
+                    // Find the most recent date
+                    val dates = snapshot.children.mapNotNull { it.key }
 
-                    try {
-                        // Get raw analog values
-                        val rawCO = readingMap["CO"]?.toString()?.toInt() ?: 0
-                        val rawBenzene = readingMap["Benzene"]?.toString()?.toInt() ?: 0
-                        val rawNH3 = readingMap["NH3"]?.toString()?.toInt() ?: 0
-                        val rawSmoke = readingMap["Smoke"]?.toString()?.toInt() ?: 0
-                        val rawLPG = readingMap["LPG"]?.toString()?.toInt() ?: 0
-                        val rawCH4 = readingMap["CH4"]?.toString()?.toInt() ?: 0
-                        val rawH2 = readingMap["H2"]?.toString()?.toInt() ?: 0
-
-                        // Convert raw values to ppm
-                        val reading = GasReading(
-                            CO = converter.convertCO(rawCO),
-                            Benzene = converter.convertBenzene(rawBenzene),
-                            NH3 = converter.convertNH3(rawNH3),
-                            Smoke = converter.convertSmoke(rawSmoke),
-                            LPG = converter.convertLPG(rawLPG),
-                            CH4 = converter.convertCH4(rawCH4),
-                            H2 = converter.convertH2(rawH2),
-                            Time = readingMap["Time"].toString()
-                        )
-                        trySend(reading)
-                    } catch (e: Exception) {
-                        Log.e("FirebaseDatabaseRepository", "Error converting gas readings", e)
+                    if (dates.isEmpty()) {
                         trySend(null)
+                        return
                     }
+
+                    // Sort dates in descending order (newest first)
+                    val sortedDates = dates.sortedDescending()
+                    val latestDate = sortedDates.firstOrNull() ?: return
+
+                    // Get reference to the latest date node
+                    val latestDateRef = gasRef.child(latestDate)
+
+                    // Get the latest time entry for this date
+                    latestDateRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(dateSnapshot: DataSnapshot) {
+                            try {
+                                // Find the most recent time
+                                val times = dateSnapshot.children.mapNotNull { it.key }
+
+                                if (times.isEmpty()) {
+                                    trySend(null)
+                                    return
+                                }
+
+                                // Sort times in descending order (newest first)
+                                val sortedTimes = times.sortedDescending()
+                                val latestTime = sortedTimes.firstOrNull() ?: return
+
+                                // Get the actual reading data
+                                val latestReadingSnapshot = dateSnapshot.child(latestTime)
+
+                                // Extract gas readings
+                                val benzene = latestReadingSnapshot.child("Benzene").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val ch4 = latestReadingSnapshot.child("CH4").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val co = latestReadingSnapshot.child("CO").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val h2 = latestReadingSnapshot.child("H2").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val lpg = latestReadingSnapshot.child("LPG").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val nh3 = latestReadingSnapshot.child("NH3").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val smoke = latestReadingSnapshot.child("Smoke").getValue(Long::class.java)?.toDouble() ?: 0.0
+
+                                // Format the timestamp
+                                val timeString = "$latestDate $latestTime"
+
+                                // Create gas reading
+                                val reading = GasReading(
+                                    CO = co,
+                                    Benzene = benzene,
+                                    NH3 = nh3,
+                                    Smoke = smoke,
+                                    LPG = lpg,
+                                    CH4 = ch4,
+                                    H2 = h2,
+                                    Time = timeString
+                                )
+
+                                trySend(reading)
+                            } catch (e: Exception) {
+                                Log.e("FirebaseDatabaseRepository", "Error fetching latest time", e)
+                                trySend(null)
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.e("FirebaseDatabaseRepository", "Latest time fetch cancelled", error.toException())
+                            trySend(null)
+                        }
+                    })
+                } catch (e: Exception) {
+                    Log.e("FirebaseDatabaseRepository", "Error fetching latest date", e)
+                    trySend(null)
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
+                Log.e("FirebaseDatabaseRepository", "Latest date fetch cancelled", error.toException())
                 close(error.toException())
             }
         }
 
-        gasRef.limitToLast(1).addValueEventListener(valueEventListener)
+        gasRef.addValueEventListener(dateEventListener)
 
         awaitClose {
-            gasRef.removeEventListener(valueEventListener)
+            gasRef.removeEventListener(dateEventListener)
         }
     }
 
@@ -279,7 +389,4 @@ class FirebaseDatabaseRepository @Inject constructor() : DatabaseRepository {
         return cachedReadingsFlow.asStateFlow()
     }
 
-    override suspend fun saveGasReading(reading: GasReading) {
-        gasRef.push().setValue(reading).await()
-    }
 }

@@ -77,14 +77,6 @@ class GasDataViewModel @Inject constructor(
         fetchWeeklyReadings()
     }
 
-    suspend fun saveReading(reading: GasReading) {
-        try {
-            repository.saveGasReading(reading)
-            _error.value = null
-        } catch (e: Exception) {
-            _error.value = "Failed to save reading: ${e.message}"
-        }
-    }
 
     // Sealed class to represent different states of data loading
     sealed class DataState<out T> {

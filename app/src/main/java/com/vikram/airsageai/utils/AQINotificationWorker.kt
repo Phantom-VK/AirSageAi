@@ -1,9 +1,7 @@
 package com.vikram.airsageai.utils
 
-import ConversionUtils
 import android.app.NotificationManager
 import android.content.Context
-import android.icu.lang.UCharacter.LineBreak.H2
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
@@ -29,7 +27,6 @@ class AQINotificationWorker(
     private val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val database = Firebase.database
     private val gasRef = database.getReference("gas_logs")
-    private val converter = ConversionUtils()
 
     override suspend fun doWork(): Result {
         try {
@@ -39,10 +36,13 @@ class AQINotificationWorker(
             // Calculate AQI
             val latestAqi = latestReading?.overallAQI()
 
+            // Get AQI category for more detailed notification
+            val aqiCategory = latestReading?.getAQICategory(latestAqi ?: 0) ?: "Unknown"
+
             // Create and show notification
             val notification = NotificationCompat.Builder(context, "channel_id")
                 .setContentTitle("Air Quality Update")
-                .setContentText("Current AQI: $latestAqi")
+                .setContentText("Current AQI: $latestAqi - $aqiCategory")
                 .setSmallIcon(R.drawable.airsage_logo)
                 .setOngoing(true)
                 .build()
@@ -59,45 +59,89 @@ class AQINotificationWorker(
     }
 
     private suspend fun fetchLatestGasReadingFromFirebase(): GasReading? = suspendCancellableCoroutine { continuation ->
-        val listener = gasRef.limitToLast(1).addValueEventListener(object : ValueEventListener {
+        // First, we need to get the latest date
+        val dateListener = gasRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
-                    var reading: GasReading? = null
+                    // Convert date nodes to a sorted list (newest first)
+                    val dateNodes = snapshot.children.mapNotNull { it.key }.sorted().reversed()
 
-                    for (data in snapshot.children) {
-                        val readingMap = data.value as? Map<String, Any>
-                        Log.d("AQIWorker", "Received data: $readingMap")
-
-                        if (readingMap != null) {
-
-                            val rawCO = readingMap["CO"]?.toString()?.toInt() ?: 0
-                            val rawBenzene = readingMap["Benzen"]?.toString()?.toInt() ?: 0  // Note: Fixed typo in key name
-                            val rawNH3 = readingMap["NH3"]?.toString()?.toInt() ?: 0
-                            val rawSmoke = readingMap["Smoke"]?.toString()?.toInt() ?: 0
-                            val rawLPG = readingMap["LPG"]?.toString()?.toInt() ?: 0
-                            val rawCH4 = readingMap["CH4"]?.toString()?.toInt() ?: 0
-                            val rawH2 = readingMap["H2"]?.toString()?.toInt() ?: 0
-
-                             reading = GasReading(
-                                CO = converter.convertCO(rawCO),
-                                Benzene = converter.convertBenzene(rawBenzene),
-                                NH3 = converter.convertNH3(rawNH3),
-                                Smoke = converter.convertSmoke(rawSmoke),
-                                LPG = converter.convertLPG(rawLPG),
-                                CH4 = converter.convertCH4(rawCH4),
-                                H2 = converter.convertH2(rawH2),
-                                Time = readingMap["Time"].toString()
-                            )
-                            Log.d("AQIWorker", "Parsed reading: $reading")
+                    if (dateNodes.isEmpty()) {
+                        if (!continuation.isCompleted) {
+                            continuation.resume(null)
                         }
+                        return
                     }
 
-                    // Resume with reading result (might be null if no data)
-                    if (!continuation.isCompleted) {
-                        continuation.resume(reading)
-                    }
+                    // Get the most recent date
+                    val latestDate = dateNodes.first()
+
+                    // Now get the latest time for this date
+                    gasRef.child(latestDate).addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(dateSnapshot: DataSnapshot) {
+                            try {
+                                // Convert time nodes to a sorted list (newest first)
+                                val timeNodes = dateSnapshot.children.mapNotNull { it.key }.sorted().reversed()
+
+                                if (timeNodes.isEmpty()) {
+                                    if (!continuation.isCompleted) {
+                                        continuation.resume(null)
+                                    }
+                                    return
+                                }
+
+                                // Get the most recent time
+                                val latestTime = timeNodes.first()
+
+                                // Get the reading data for this time
+                                val readingSnapshot = dateSnapshot.child(latestTime)
+
+                                // Extract gas readings
+                                val benzene = readingSnapshot.child("Benzene").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val ch4 = readingSnapshot.child("CH4").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val co = readingSnapshot.child("CO").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val h2 = readingSnapshot.child("H2").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val lpg = readingSnapshot.child("LPG").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val nh3 = readingSnapshot.child("NH3").getValue(Long::class.java)?.toDouble() ?: 0.0
+                                val smoke = readingSnapshot.child("Smoke").getValue(Long::class.java)?.toDouble() ?: 0.0
+
+                                // Format the timestamp
+                                val timeString = "$latestDate $latestTime"
+
+                                // Create the gas reading object
+                                val reading = GasReading(
+                                    CO = co,
+                                    Benzene = benzene,
+                                    NH3 = nh3,
+                                    Smoke = smoke,
+                                    LPG = lpg,
+                                    CH4 = ch4,
+                                    H2 = h2,
+                                    Time = timeString
+                                )
+
+                                Log.d("AQIWorker", "Parsed reading: $reading")
+
+                                if (!continuation.isCompleted) {
+                                    continuation.resume(reading)
+                                }
+                            } catch (e: Exception) {
+                                Log.e("AQIWorker", "Error processing time node", e)
+                                if (!continuation.isCompleted) {
+                                    continuation.resumeWithException(e)
+                                }
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.e("AQIWorker", "Time fetch cancelled", error.toException())
+                            if (!continuation.isCompleted) {
+                                continuation.resumeWithException(error.toException())
+                            }
+                        }
+                    })
                 } catch (e: Exception) {
-                    Log.e("AQIWorker", "Parsing failed", e)
+                    Log.e("AQIWorker", "Error processing date nodes", e)
                     if (!continuation.isCompleted) {
                         continuation.resumeWithException(e)
                     }
@@ -105,7 +149,7 @@ class AQINotificationWorker(
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("AQIWorker", "Data fetch cancelled", error.toException())
+                Log.e("AQIWorker", "Date fetch cancelled", error.toException())
                 if (!continuation.isCompleted) {
                     continuation.resumeWithException(error.toException())
                 }
@@ -114,7 +158,7 @@ class AQINotificationWorker(
 
         // Make sure we remove the listener when the coroutine is cancelled
         continuation.invokeOnCancellation {
-            gasRef.removeEventListener(listener)
+            gasRef.removeEventListener(dateListener)
         }
     }
 }
