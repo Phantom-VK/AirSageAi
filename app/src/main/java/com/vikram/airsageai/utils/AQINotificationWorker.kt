@@ -1,5 +1,6 @@
 package com.vikram.airsageai.utils
 
+import LocationViewModel
 import android.app.NotificationManager
 import android.content.Context
 import android.util.Log
@@ -12,7 +13,10 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.vikram.airsageai.R
+import com.vikram.airsageai.data.dataclass.AirQualityRequest
 import com.vikram.airsageai.data.dataclass.GasReading
+import com.vikram.airsageai.data.dataclass.Location
+import com.vikram.airsageai.data.repository.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -27,14 +31,27 @@ class AQINotificationWorker(
     private val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val database = Firebase.database
     private val gasRef = database.getReference("gas_logs")
+    val locationUtils = LocationUtils(context)
+    val locationVM: LocationViewModel = LocationViewModel(locationUtils, context)
 
+    private val api = RetrofitInstance.api
+    private val fullUrl = "https://airquality.googleapis.com/v1/currentConditions:lookup?key=AIzaSyCeUGG8Ks7tks33kyzBZu23rKPH354l07Q"
+    val location = locationVM.location.value
     override suspend fun doWork(): Result {
         try {
             // Directly fetch the latest reading from Firebase
             val latestReading = fetchLatestGasReadingFromFirebase()
 
+            val response = api.getCurrentConditions(
+                fullUrl = fullUrl,
+                request = AirQualityRequest(
+                    location = Location(location!!.latitude, location.longitude)
+                )
+            )
+
             // Calculate AQI
-            val latestAqi = latestReading?.overallAQI()
+//            val latestAqi = latestReading?.overallAQI()
+            val latestAqi = response.body()?.indexes?.firstOrNull()?.aqi
 
             // Get AQI category for more detailed notification
             val aqiCategory = latestReading?.getAQICategory(latestAqi ?: 0) ?: "Unknown"

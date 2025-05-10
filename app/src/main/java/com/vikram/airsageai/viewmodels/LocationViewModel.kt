@@ -1,12 +1,17 @@
 import android.content.Context
 import android.location.Location
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.vikram.airsageai.utils.LocationUtils
+import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlin.jvm.java
+
 
 class LocationViewModel(
     private val locationUtils: LocationUtils,
@@ -33,7 +38,11 @@ class LocationViewModel(
                         location.latitude,
                         location.longitude
                     )
+
+                    Log.d("AirsageTest", "location inside vm: ${location.latitude} ${location.longitude}")
                 }
+
+
 
                 _error.value = null
             } catch (e: Exception) {

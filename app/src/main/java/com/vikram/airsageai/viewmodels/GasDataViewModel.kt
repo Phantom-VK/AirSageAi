@@ -1,9 +1,13 @@
 package com.vikram.airsageai.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vikram.airsageai.data.dataclass.AirQualityRequest
 import com.vikram.airsageai.data.dataclass.GasReading
+import com.vikram.airsageai.data.dataclass.Location
 import com.vikram.airsageai.data.repository.FirebaseDatabaseRepository
+import com.vikram.airsageai.data.repository.RetrofitInstance
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +30,9 @@ class GasDataViewModel @Inject constructor(
     // General error state for operations like saving data
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
+
+    private val api = RetrofitInstance.api
+    private val fullUrl = "https://airquality.googleapis.com/v1/currentConditions:lookup?key=AIzaSyCeUGG8Ks7tks33kyzBZu23rKPH354l07Q"
 
     init {
         fetchLatestGasReading()
@@ -76,6 +83,24 @@ class GasDataViewModel @Inject constructor(
     fun retryWeeklyReadings() {
         fetchWeeklyReadings()
     }
+
+
+    suspend fun getAqi(latitude: Double, longitude: Double): Int? {
+        val response = api.getCurrentConditions(
+            fullUrl = fullUrl,
+            request = AirQualityRequest(
+                location = Location(latitude, longitude)
+            )
+        )
+
+        return if (response.isSuccessful) {
+            response.body()?.indexes?.firstOrNull()?.aqi
+        } else {
+            null
+        }
+    }
+
+
 
 
     // Sealed class to represent different states of data loading

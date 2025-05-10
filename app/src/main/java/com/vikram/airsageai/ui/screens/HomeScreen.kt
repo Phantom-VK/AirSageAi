@@ -96,7 +96,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(16.dp))
             HealthInfoCard(healthImplications, aqiColor)
             Spacer(modifier = Modifier.height(16.dp))
-            PollutantLevelsSection(latestReading)
+//            PollutantLevelsSection(latestReading)
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
@@ -122,9 +122,7 @@ fun TopAppBar(
     }
 
     // Fetch location when the component is first composed
-    LaunchedEffect(key1 = Unit) {
-        locationVM.fetchLocation()
-    }
+
 
     Row(
         modifier = Modifier
@@ -577,18 +575,18 @@ fun ObservationCard(
             )
 
             // AQI value for this pollutant
-            Surface(
-                shape = RoundedCornerShape(4.dp),
-                color = aqiColor.copy(alpha = 0.2f)
-            ) {
-                Text(
-                    text = "AQI: $aqiValue",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = aqiColor,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
+//            Surface(
+//                shape = RoundedCornerShape(4.dp),
+//                color = aqiColor.copy(alpha = 0.2f)
+//            ) {
+//                Text(
+//                    text = "AQI: $aqiValue",
+//                    fontSize = 14.sp,
+//                    fontWeight = FontWeight.Medium,
+//                    color = aqiColor,
+//                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+//                )
+//            }
         }
     }
 }
