@@ -1,12 +1,10 @@
 package com.vikram.airsageai.ui.screens
 
-import androidx.compose.animation.core.EaseInOutCubic
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,14 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.vikram.airsageai.data.dataclass.GasReading
 import com.vikram.airsageai.utils.AnalyticsUtils
 import com.vikram.airsageai.utils.exportToCSV
 import com.vikram.airsageai.utils.exportToExcel
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.models.AnimationMode
-import ir.ehsannarmani.compose_charts.models.DrawStyle
 import ir.ehsannarmani.compose_charts.models.Line
 
 @Composable
@@ -61,43 +60,25 @@ fun AnalyticsScreen(paddingValues: PaddingValues, themeColor: Color, readings:Li
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .background(themeColor)
+            .background(themeColor),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        LineChart(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-                .padding(20.dp),
-            data = remember {
-                listOf(
-                    Line(
-                        label = "AQI",
-                        values = aqiReadings,
-                        color = SolidColor(Color(0xFF2BC0A1)),
-                        firstGradientFillColor = Color(0xFF2BC0A1).copy(alpha = .5f),
-                        secondGradientFillColor = Color.Transparent,
-                        strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
-                        gradientAnimationDelay = 1000,
-                        drawStyle = DrawStyle.Stroke(width = 2.dp),
-                    )
-                )
-            },
-            animationMode = AnimationMode.Together(delayBuilder = {
-                it * 500L
-            }),
-            minValue = 0.0,
-            maxValue = 500.0
+
+        Spacer(Modifier.height(10.dp))
+
+        Text(
+            text = "Last 7 Days Readings",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
         )
+
+
 
         HorizontalDivider(
             modifier = Modifier
-                .fillMaxWidth(),
-             2.dp, Color.Black
-        )
-        Spacer(Modifier.height(3.dp))
-        HorizontalDivider(
-            modifier = Modifier
-                .fillMaxWidth(),
+                .padding(20.dp),
             2.dp, Color.Black
         )
 
@@ -158,11 +139,10 @@ fun AnalyticsScreen(paddingValues: PaddingValues, themeColor: Color, readings:Li
             minValue = gasMinMax.min,
             maxValue = gasMinMax.max
         )
-//TODO Fix export error
         Row(
             modifier = Modifier
                 .fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.SpaceEvenly
         ){
             Button(

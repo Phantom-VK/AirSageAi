@@ -81,13 +81,13 @@ fun SettingsScreen(navController: NavController, paddingValues: PaddingValues, t
             modifier = Modifier.padding(horizontal = 20.dp)
         )
 
-        SettingCard(title = "Language", themeColor) {
-            CustomDropdown(
-                placeHolder = selectedLanguage,
-                options = listOf("English", "Hindi", "Marathi", "Telugu"),
-                onOptionSelected = { selectedLanguage = it }
-            )
-        }
+//        SettingCard(title = "Language", themeColor) {
+//            CustomDropdown(
+//                placeHolder = selectedLanguage,
+//                options = listOf("English", "Hindi", "Marathi", "Telugu"),
+//                onOptionSelected = { selectedLanguage = it }
+//            )
+//        }
 
         Spacer(modifier = Modifier.height(7.dp))
 
@@ -119,24 +119,24 @@ fun SettingsScreen(navController: NavController, paddingValues: PaddingValues, t
         Spacer(modifier = Modifier.height(7.dp))
 
         // Theme Toggle
-        SettingCard(title = "Appearance", themeColor) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Dark Mode", fontSize = 16.sp)
-                Switch(
-                    checked = isDarkMode,
-                    onCheckedChange = { isDarkMode = it }
-                )
-            }
-        }
+//        SettingCard(title = "Appearance", themeColor) {
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween,
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Text("Dark Mode", fontSize = 16.sp)
+//                Switch(
+//                    checked = isDarkMode,
+//                    onCheckedChange = { isDarkMode = it }
+//                )
+//            }
+//        }
 
         Spacer(modifier = Modifier.height(7.dp))
 
         // Account Section
-        SettingCard(title = "Account", themeColor) {
+        SettingCard(title = "App", themeColor) {
             Button(
                 onClick = {
                     // Add logout logic here
@@ -147,7 +147,7 @@ fun SettingsScreen(navController: NavController, paddingValues: PaddingValues, t
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Logout", color = Color.White)
+                Text("Exit App", color = Color.White)
             }
         }
 

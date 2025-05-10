@@ -76,11 +76,12 @@ fun MainScaffoldScreen() {
     }
 
     // Default theme color is light blue, changes based on AQI
-    var themeColor = when (overallAQI) {
-        in 0..50 -> Color(0xFF96D9F3)
-        in 51..100 -> Color(0xFFFCEFCC)
-        else -> Color(0xFFFFC2A5)
-    }
+//    var themeColor = when (overallAQI) {
+//        in 0..50 -> Color(0xFF96D9F3)
+//        in 51..100 -> Color(0xFFFCEFCC)
+//        else -> Color(0xFFFFC2A5)
+//    }
+    var themeColor = Color(0xFF96D9F3)
 
     Scaffold(
         bottomBar = {

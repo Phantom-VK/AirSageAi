@@ -5,6 +5,7 @@ import com.vikram.airsageai.data.dataclass.GasReadingLists
 import com.vikram.airsageai.data.dataclass.MinMax
 import android.content.Context
 import android.os.Environment
+import android.widget.Toast
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 import java.io.FileOutputStream
@@ -13,11 +14,9 @@ import java.util.*
 
 fun Context.exportToExcel(data: List<GasReading>) {
     try {
-        // Create a new workbook
         val workbook = XSSFWorkbook()
         val sheet = workbook.createSheet("Gas Readings")
 
-        // Create header row
         val headerRow = sheet.createRow(0)
         val headers = arrayOf(
             "Time", "CO (ppm)", "CO AQI", "Benzene (ppm)", "Benzene AQI",
@@ -29,7 +28,6 @@ fun Context.exportToExcel(data: List<GasReading>) {
             headerRow.createCell(index).setCellValue(header)
         }
 
-        // Fill data rows
         data.forEachIndexed { rowIndex, reading ->
             val row = sheet.createRow(rowIndex + 1)
             val aqiMap = reading.toAQI()
@@ -53,83 +51,78 @@ fun Context.exportToExcel(data: List<GasReading>) {
             row.createCell(16).setCellValue(reading.getAQICategory(reading.overallAQI()))
         }
 
-        // Auto-size columns
-        for (i in 0 until headers.size) {
-            sheet.autoSizeColumn(i)
+
+
+        // Optional: Manually set column width (in units of 1/256th of a character width)
+        for (i in headers.indices) {
+            sheet.setColumnWidth(i, 5000) // or adjust to your needs
         }
 
-        // Create file name with timestamp
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "GasReadings_$timeStamp.xlsx"
-
-        // Get downloads directory
         val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val file = File(downloadsDir, fileName)
 
-        // Write to file
-        val fileOut = FileOutputStream(file)
-        workbook.write(fileOut)
-        fileOut.close()
-//        workbook.close()
+        FileOutputStream(file).use { fileOut ->
+            workbook.write(fileOut)
+        }
 
-        // Show success message or notification
-        // You might want to add a Toast or notification here
+        // ✅ Optional: Add a success Toast
+        Toast.makeText(this, "Excel exported to Downloads/$fileName", Toast.LENGTH_SHORT).show()
+
     } catch (e: Exception) {
         e.printStackTrace()
-        // Handle error (show Toast, log, etc.)
+        Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 
+
 fun Context.exportToCSV(data: List<GasReading>) {
     try {
-        // Create CSV header
-        val csvHeader = "Time,CO (ppm),CO AQI,Benzene (ppm),Benzene AQI," +
-                "NH3 (ppm),NH3 AQI,Smoke (ppm),Smoke AQI,LPG (ppm),LPG AQI," +
-                "CH4 (ppm),CH4 AQI,H2 (ppm),H2 AQI,Overall AQI,AQI Category\n"
+        val headers = listOf(
+            "Time", "CO (ppm)", "CO AQI", "Benzene (ppm)", "Benzene AQI",
+            "NH3 (ppm)", "NH3 AQI", "Smoke (ppm)", "Smoke AQI", "LPG (ppm)", "LPG AQI",
+            "CH4 (ppm)", "CH4 AQI", "H2 (ppm)", "H2 AQI", "Overall AQI", "AQI Category"
+        )
 
-        // Build CSV content
-        val csvContent = StringBuilder()
-        csvContent.append(csvHeader)
+        val csvContent = buildString {
+            appendLine(headers.joinToString(","))
 
-        data.forEach { reading ->
-            val aqiMap = reading.toAQI()
-            csvContent.append("${reading.Time ?: ""},")
-            csvContent.append("${reading.CO ?: 0.0},")
-            csvContent.append("${aqiMap["CO"] ?: 0},")
-            csvContent.append("${reading.Benzene ?: 0.0},")
-            csvContent.append("${aqiMap["Benzene"] ?: 0},")
-            csvContent.append("${reading.NH3 ?: 0.0},")
-            csvContent.append("${aqiMap["NH3"] ?: 0},")
-            csvContent.append("${reading.Smoke ?: 0.0},")
-            csvContent.append("${aqiMap["Smoke"] ?: 0},")
-            csvContent.append("${reading.LPG ?: 0.0},")
-            csvContent.append("${aqiMap["LPG"] ?: 0},")
-            csvContent.append("${reading.CH4 ?: 0.0},")
-            csvContent.append("${aqiMap["Methane"] ?: 0},")
-            csvContent.append("${reading.H2 ?: 0.0},")
-            csvContent.append("${aqiMap["Hydrogen"] ?: 0},")
-            csvContent.append("${reading.overallAQI()},")
-            csvContent.append("${reading.getAQICategory(reading.overallAQI())}\n")
+            data.forEach { reading ->
+                val aqi = reading.toAQI()
+                val row = listOf(
+                    reading.Time ?: "",
+                    reading.CO ?: 0.0,
+                    aqi["CO"] ?: 0,
+                    reading.Benzene ?: 0.0,
+                    aqi["Benzene"] ?: 0,
+                    reading.NH3 ?: 0.0,
+                    aqi["NH3"] ?: 0,
+                    reading.Smoke ?: 0.0,
+                    aqi["Smoke"] ?: 0,
+                    reading.LPG ?: 0.0,
+                    aqi["LPG"] ?: 0,
+                    reading.CH4 ?: 0.0,
+                    aqi["Methane"] ?: 0,
+                    reading.H2 ?: 0.0,
+                    aqi["Hydrogen"] ?: 0,
+                    reading.overallAQI(),
+                    reading.getAQICategory(reading.overallAQI())
+                )
+                appendLine(row.joinToString(","))
+            }
         }
 
-        // Create file name with timestamp
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val fileName = "GasReadings_$timeStamp.csv"
+        val fileName = "GasReadings_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv"
+        val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
 
-        // Get downloads directory
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val file = File(downloadsDir, fileName)
+        FileOutputStream(file).use { it.write(csvContent.toByteArray()) }
+        Toast.makeText(this, "Excel exported to Downloads/$fileName", Toast.LENGTH_SHORT).show()
 
-        // Write to file
-        FileOutputStream(file).use { fos ->
-            fos.write(csvContent.toString().toByteArray())
-        }
-
-        // Show success message or notification
-        // You might want to add a Toast or notification here
     } catch (e: Exception) {
+        Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
         e.printStackTrace()
-        // Handle error (show Toast, log, etc.)
+
     }
 }
 
