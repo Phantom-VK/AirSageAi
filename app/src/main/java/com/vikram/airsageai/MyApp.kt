@@ -5,7 +5,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.vikram.airsageai.utils.AQINotificationWorker
@@ -14,33 +16,39 @@ import java.util.concurrent.TimeUnit
 
 
 @HiltAndroidApp
-class MyApp : Application()  {
-
-
+class MyApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
-
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "channel_id",
-                "AirSage AQI",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-
-            notificationManager.createNotificationChannel(channel)
-        }
-
-
+        createNotificationChannel()
     }
 
-     fun scheduleAQINotificationWorker(context: Context) {
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "channel_id", // Must match the one in NotificationCompat.Builder
+                "AirSage AQI Alerts",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Notifies user about real-time Air Quality Index updates"
+            }
+
+            val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    fun scheduleAQINotificationWorker(context: Context) {
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
         val workRequest = PeriodicWorkRequestBuilder<AQINotificationWorker>(
-            15, TimeUnit.MINUTES // Minimum interval for WorkManager
-        ).build()
+            15, TimeUnit.MINUTES
+        )
+            .setConstraints(constraints)
+            .setInitialDelay(1, TimeUnit.SECONDS)
+            .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             "AQI_NOTIFICATION_WORK",
@@ -52,7 +60,6 @@ class MyApp : Application()  {
     fun cancelAQINotificationWorker(context: Context) {
         WorkManager.getInstance(context).cancelUniqueWork("AQI_NOTIFICATION_WORK")
     }
-
-
 }
+
 

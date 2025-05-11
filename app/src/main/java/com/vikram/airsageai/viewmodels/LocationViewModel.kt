@@ -50,6 +50,10 @@ class LocationViewModel(
             }
         }
     }
+
+    init {
+        fetchLocation()
+    }
 }
 
 class LocationViewModelFactory(

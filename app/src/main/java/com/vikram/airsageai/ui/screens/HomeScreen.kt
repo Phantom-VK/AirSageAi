@@ -32,7 +32,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -66,12 +65,12 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     paddingValues: PaddingValues,
-    latestReading: State<GasReading?>,
+    latestReading: GasReading?,
     overallAQI: Int? = null,
     themeColor: Color
 ) {
     // Create a dummy GasReading if latestReading.value is null to access its functions
-    val gasReading = latestReading.value ?: GasReading()
+    val gasReading = latestReading ?: GasReading()
 
     // Get AQI category and color based on overallAQI value
     val aqiCategory = gasReading.getAQICategory(overallAQI ?: 0)
@@ -109,7 +108,10 @@ fun TopAppBar(
     val context = LocalContext.current
     val locationUtils = remember { LocationUtils(context) }
     val viewModelFactory = remember { LocationViewModelFactory(locationUtils, context) }
-    val locationVM: LocationViewModel = viewModel(factory = viewModelFactory)
+    val locationVM: LocationViewModel = viewModel(
+        key = "LocationVM",
+        factory = viewModelFactory
+    )
 
     val locationName by locationVM.locationName.collectAsState()
     val errorMessage by locationVM.error.collectAsState()
@@ -170,6 +172,7 @@ fun TopAppBar(
 fun AQIDisplay(aqi: Int?, aqiCategory: String, aqiColor: Color) {
     var image: Painter= painterResource(id = R.drawable.good_weather)
 
+
     image = when (aqi) {
         in 0..50 -> painterResource(id = R.drawable.good_weather)
         in 51..100 -> painterResource(id = R.drawable.bad_weather)
@@ -198,10 +201,13 @@ fun AQIDisplay(aqi: Int?, aqiCategory: String, aqiColor: Color) {
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             TopAppBar()
+
+
             Text(
-                text = (aqi ?: 0).toString(),
-                fontSize = 120.sp,
+                text = if(aqi != 0) aqi.toString() else "Fetching\n(Will take time on first opening)",
+                fontSize = if(aqi != 0) 120.sp else 20.sp,
                 fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
                 color = Color.Black
             )
 
@@ -388,21 +394,21 @@ fun PollutantAqiRow(pollutant: String, aqi: Int, reading: GasReading) {
 
 @Composable
 fun ObservationsGrid(
-    gasReading: State<GasReading?>
+    gasReading: GasReading?
 ) {
-    val CO = gasReading.value?.CO?.toFloat() ?: 0f
-    val Benzene = gasReading.value?.Benzene?.toFloat() ?: 0f
-    val NH3 = gasReading.value?.NH3?.toFloat() ?: 0f
-    val Smoke = gasReading.value?.Smoke?.toFloat() ?: 0f
-    val LPG = gasReading.value?.LPG?.toFloat() ?: 0f
-    val Methane = gasReading.value?.CH4?.toFloat() ?: 0f
-    val Hydrogen = gasReading.value?.H2?.toFloat() ?: 0f
+    val CO = gasReading?.CO?.toFloat() ?: 0f
+    val Benzene = gasReading?.Benzene?.toFloat() ?: 0f
+    val NH3 = gasReading?.NH3?.toFloat() ?: 0f
+    val Smoke = gasReading?.Smoke?.toFloat() ?: 0f
+    val LPG = gasReading?.LPG?.toFloat() ?: 0f
+    val Methane = gasReading?.CH4?.toFloat() ?: 0f
+    val Hydrogen = gasReading?.H2?.toFloat() ?: 0f
 
     // Create a dummy GasReading to access its functions
-    val reading = gasReading.value ?: GasReading()
+    val reading = gasReading ?: GasReading()
 
     // Get individual AQI values to determine thresholds
-    val aqiValues = if (gasReading.value != null) gasReading.value!!.toAQI() else mapOf()
+    val aqiValues = if (gasReading != null) gasReading.toAQI() else mapOf()
 
     Column(
         modifier = Modifier

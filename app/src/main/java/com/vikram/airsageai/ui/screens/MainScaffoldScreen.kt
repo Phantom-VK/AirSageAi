@@ -24,8 +24,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,7 +39,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -59,11 +58,11 @@ fun MainScaffoldScreen() {
     val context = LocalContext.current
     val locationUtils = remember { LocationUtils(context) }
     val viewModelFactory = remember { LocationViewModelFactory(locationUtils, context) }
-    val locationVM: LocationViewModel = viewModel(factory = viewModelFactory)
+    val locationVM: LocationViewModel = viewModel(
+        key = "LocationVM",
+        factory = viewModelFactory
+    )
 
-    LaunchedEffect(key1 = Unit) {
-        locationVM.fetchLocation()
-    }
 
     val location = locationVM.location.collectAsState()
     Log.d("AirsageTest", "location inside mainscaffold: ${location.value?.latitude} ${location.value?.longitude}")
@@ -74,9 +73,8 @@ fun MainScaffoldScreen() {
     val weeklyReadingState = gasDataViewModel.weeklyReadingState.collectAsState()
 
     // Create a wrapped State for the extracted data to match the expected types
-    val latestReading = remember { derivedStateOf {
-        (latestReadingState.value as? GasDataViewModel.DataState.Success)?.data
-    }}
+    val latestReading = (latestReadingState.value as? GasDataViewModel.DataState.Success)?.data
+
 
     // Determine AQI based on latest reading state
 //    val overallAQI = when (val state = latestReadingState.value) {
@@ -94,31 +92,35 @@ fun MainScaffoldScreen() {
         )
     )
 
-    LaunchedEffect(permissionsState.allPermissionsGranted) {
-        if (!permissionsState.permissions.any { it.status.isGranted }) {
+    if (permissionsState.allPermissionsGranted.not()) {
+        SideEffect {
             permissionsState.launchMultiplePermissionRequest()
         }
     }
 
-    LaunchedEffect(location.value) {
-        if (location.value != null) {
-            val aqi = gasDataViewModel.getAqi(
-                location.value!!.latitude,
-                location.value!!.longitude
-            )
-            overallAQI = aqi?:0
-            Log.d("AirsageTest", "Fetched AQI: $aqi")
+
+    LaunchedEffect(location.value?.latitude to location.value?.longitude) {
+        location.value?.let {
+            gasDataViewModel.getAqi(it.latitude, it.longitude)?.let { aqi ->
+                overallAQI = aqi
+                Log.d("AirsageTest", "Fetched AQI: $aqi")
+            }
         }
     }
 
 
 
-    // Default theme color is light blue, changes based on AQI
-    var themeColor = when (overallAQI) {
-        in 0..50 -> Color(0xFF96D9F3)
-        in 51..100 -> Color(0xFFFCEFCC)
-        else -> Color(0xFFFFC2A5)
+
+    val themeColor by remember(overallAQI) {
+        mutableStateOf(
+            when (overallAQI) {
+                in 0..50 -> Color(0xFF96D9F3)
+                in 51..100 -> Color(0xFFFCEFCC)
+                else -> Color(0xFFFFC2A5)
+            }
+        )
     }
+
 
     Scaffold(
         bottomBar = {

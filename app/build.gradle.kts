@@ -11,10 +11,6 @@ plugins {
     id("com.google.dagger.hilt.android")
 
 }
-val localProperties = Properties().apply {
-    load(rootProject.file("local.properties").inputStream())
-}
-val airApiKey: String = localProperties.getProperty("AIR_QUALITY_API_KEY") ?: "\"\""
 
 
 android {
@@ -23,11 +19,6 @@ android {
     compileSdk = 35
 
     defaultConfig {
-
-
-        // Load properties from local.properties
-
-        buildConfigField("String", "AIR_QUALITY_API_KEY", "\"${airApiKey}\"")
 
 
         applicationId = "com.vikram.airsageai"
@@ -39,6 +30,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val localProperties = Properties()
+    val localPropertiesFile = File(rootDir, "secret.properties")
+    if(localPropertiesFile.exists() && localPropertiesFile.isFile) {
+        localPropertiesFile.inputStream().use {
+            localProperties.load(it)
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -46,7 +45,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            buildConfigField("String", "AIR_QUALITY_API_KEY", localProperties.getProperty("AIR_QUALITY_API_KEY"))
         }
+
+        debug{
+            buildConfigField("String", "AIR_QUALITY_API_KEY", localProperties.getProperty("AIR_QUALITY_API_KEY"))
+        }
+
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -58,6 +64,7 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
+        resValues = true
     }
 
 

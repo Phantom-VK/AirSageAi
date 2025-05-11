@@ -1,8 +1,8 @@
 package com.vikram.airsageai.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vikram.airsageai.BuildConfig
 import com.vikram.airsageai.data.dataclass.AirQualityRequest
 import com.vikram.airsageai.data.dataclass.GasReading
 import com.vikram.airsageai.data.dataclass.Location
@@ -32,7 +32,9 @@ class GasDataViewModel @Inject constructor(
     val error: StateFlow<String?> = _error
 
     private val api = RetrofitInstance.api
-    private val fullUrl = "https://airquality.googleapis.com/v1/currentConditions:lookup?key=AIzaSyCeUGG8Ks7tks33kyzBZu23rKPH354l07Q"
+    val apiKey = BuildConfig.AIR_QUALITY_API_KEY
+    val fullUrl = "https://airquality.googleapis.com/v1/currentConditions:lookup?key=$apiKey"
+
 
     init {
         fetchLatestGasReading()
