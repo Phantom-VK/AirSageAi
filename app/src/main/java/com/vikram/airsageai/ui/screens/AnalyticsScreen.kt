@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.sp
 import com.vikram.airsageai.data.dataclass.GasReading
 import com.vikram.airsageai.utils.AnalyticsUtils
 import com.vikram.airsageai.utils.exportToCSV
-import com.vikram.airsageai.utils.exportToExcel
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.models.AnimationMode
 import ir.ehsannarmani.compose_charts.models.Line
@@ -68,7 +67,7 @@ fun AnalyticsScreen(paddingValues: PaddingValues, themeColor: Color, readings:Li
         Spacer(Modifier.height(10.dp))
 
         Text(
-            text = "Last 7 Days Readings",
+            text = "Weekly Readings",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black
@@ -145,15 +144,6 @@ fun AnalyticsScreen(paddingValues: PaddingValues, themeColor: Color, readings:Li
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.SpaceEvenly
         ){
-            Button(
-                onClick = {
-                   context.exportToExcel(readings)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-
-            ) {
-                Text("Export to Excel", color = Color.White)
-            }
 
             Button(
                 onClick = {
@@ -162,7 +152,7 @@ fun AnalyticsScreen(paddingValues: PaddingValues, themeColor: Color, readings:Li
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
 
             ) {
-                Text("Export to CSV", color = Color.White)
+                Text("Export Data", color = Color.White)
             }
         }
 

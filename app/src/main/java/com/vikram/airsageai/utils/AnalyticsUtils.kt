@@ -12,69 +12,69 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-fun Context.exportToExcel(data: List<GasReading>) {
-    try {
-        val workbook = XSSFWorkbook()
-        val sheet = workbook.createSheet("Gas Readings")
-
-        val headerRow = sheet.createRow(0)
-        val headers = arrayOf(
-            "Time", "CO (ppm)", "CO AQI", "Benzene (ppm)", "Benzene AQI",
-            "NH3 (ppm)", "NH3 AQI", "Smoke (ppm)", "Smoke AQI", "LPG (ppm)", "LPG AQI",
-            "CH4 (ppm)", "CH4 AQI", "H2 (ppm)", "H2 AQI", "Overall AQI", "AQI Category"
-        )
-
-        headers.forEachIndexed { index, header ->
-            headerRow.createCell(index).setCellValue(header)
-        }
-
-        data.forEachIndexed { rowIndex, reading ->
-            val row = sheet.createRow(rowIndex + 1)
-            val aqiMap = reading.toAQI()
-
-            row.createCell(0).setCellValue(reading.Time ?: "")
-            row.createCell(1).setCellValue(reading.CO ?: 0.0)
-            row.createCell(2).setCellValue(aqiMap["CO"]?.toDouble() ?: 0.0)
-            row.createCell(3).setCellValue(reading.Benzene ?: 0.0)
-            row.createCell(4).setCellValue(aqiMap["Benzene"]?.toDouble() ?: 0.0)
-            row.createCell(5).setCellValue(reading.NH3 ?: 0.0)
-            row.createCell(6).setCellValue(aqiMap["NH3"]?.toDouble() ?: 0.0)
-            row.createCell(7).setCellValue(reading.Smoke ?: 0.0)
-            row.createCell(8).setCellValue(aqiMap["Smoke"]?.toDouble() ?: 0.0)
-            row.createCell(9).setCellValue(reading.LPG ?: 0.0)
-            row.createCell(10).setCellValue(aqiMap["LPG"]?.toDouble() ?: 0.0)
-            row.createCell(11).setCellValue(reading.CH4 ?: 0.0)
-            row.createCell(12).setCellValue(aqiMap["Methane"]?.toDouble() ?: 0.0)
-            row.createCell(13).setCellValue(reading.H2 ?: 0.0)
-            row.createCell(14).setCellValue(aqiMap["Hydrogen"]?.toDouble() ?: 0.0)
-            row.createCell(15).setCellValue(reading.overallAQI().toDouble())
-            row.createCell(16).setCellValue(reading.getAQICategory(reading.overallAQI()))
-        }
-
-
-
-        // Optional: Manually set column width (in units of 1/256th of a character width)
-        for (i in headers.indices) {
-            sheet.setColumnWidth(i, 5000) // or adjust to your needs
-        }
-
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val fileName = "GasReadings_$timeStamp.xlsx"
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val file = File(downloadsDir, fileName)
-
-        FileOutputStream(file).use { fileOut ->
-            workbook.write(fileOut)
-        }
-
-        // ✅ Optional: Add a success Toast
-        Toast.makeText(this, "Excel exported to Downloads/$fileName", Toast.LENGTH_SHORT).show()
-
-    } catch (e: Exception) {
-        e.printStackTrace()
-        Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
-    }
-}
+//fun Context.exportToExcel(data: List<GasReading>) {
+//    try {
+//        val workbook = XSSFWorkbook()
+//        val sheet = workbook.createSheet("Gas Readings")
+//
+//        val headerRow = sheet.createRow(0)
+//        val headers = arrayOf(
+//            "Time", "CO (ppm)", "CO AQI", "Benzene (ppm)", "Benzene AQI",
+//            "NH3 (ppm)", "NH3 AQI", "Smoke (ppm)", "Smoke AQI", "LPG (ppm)", "LPG AQI",
+//            "CH4 (ppm)", "CH4 AQI", "H2 (ppm)", "H2 AQI", "Overall AQI", "AQI Category"
+//        )
+//
+//        headers.forEachIndexed { index, header ->
+//            headerRow.createCell(index).setCellValue(header)
+//        }
+//
+//        data.forEachIndexed { rowIndex, reading ->
+//            val row = sheet.createRow(rowIndex + 1)
+//            val aqiMap = reading.toAQI()
+//
+//            row.createCell(0).setCellValue(reading.Time ?: "")
+//            row.createCell(1).setCellValue(reading.CO ?: 0.0)
+//            row.createCell(2).setCellValue(aqiMap["CO"]?.toDouble() ?: 0.0)
+//            row.createCell(3).setCellValue(reading.Benzene ?: 0.0)
+//            row.createCell(4).setCellValue(aqiMap["Benzene"]?.toDouble() ?: 0.0)
+//            row.createCell(5).setCellValue(reading.NH3 ?: 0.0)
+//            row.createCell(6).setCellValue(aqiMap["NH3"]?.toDouble() ?: 0.0)
+//            row.createCell(7).setCellValue(reading.Smoke ?: 0.0)
+//            row.createCell(8).setCellValue(aqiMap["Smoke"]?.toDouble() ?: 0.0)
+//            row.createCell(9).setCellValue(reading.LPG ?: 0.0)
+//            row.createCell(10).setCellValue(aqiMap["LPG"]?.toDouble() ?: 0.0)
+//            row.createCell(11).setCellValue(reading.CH4 ?: 0.0)
+//            row.createCell(12).setCellValue(aqiMap["Methane"]?.toDouble() ?: 0.0)
+//            row.createCell(13).setCellValue(reading.H2 ?: 0.0)
+//            row.createCell(14).setCellValue(aqiMap["Hydrogen"]?.toDouble() ?: 0.0)
+//            row.createCell(15).setCellValue(reading.overallAQI().toDouble())
+//            row.createCell(16).setCellValue(reading.getAQICategory(reading.overallAQI()))
+//        }
+//
+//
+//
+//        // Optional: Manually set column width (in units of 1/256th of a character width)
+//        for (i in headers.indices) {
+//            sheet.setColumnWidth(i, 5000) // or adjust to your needs
+//        }
+//
+//        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+//        val fileName = "GasReadings_$timeStamp.xlsx"
+//        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+//        val file = File(downloadsDir, fileName)
+//
+//        FileOutputStream(file).use { fileOut ->
+//            workbook.write(fileOut)
+//        }
+//
+//        // ✅ Optional: Add a success Toast
+//        Toast.makeText(this, "Excel exported to Downloads/$fileName", Toast.LENGTH_SHORT).show()
+//
+//    } catch (e: Exception) {
+//        e.printStackTrace()
+//        Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+//    }
+//}
 
 
 fun Context.exportToCSV(data: List<GasReading>) {
