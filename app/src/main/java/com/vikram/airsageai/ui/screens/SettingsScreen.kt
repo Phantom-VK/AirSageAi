@@ -1,5 +1,6 @@
 package com.vikram.airsageai.ui.screens
 
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -140,9 +141,7 @@ fun SettingsScreen(navController: NavController, paddingValues: PaddingValues, t
             Button(
                 onClick = {
                     // Add logout logic here
-                    navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
-                    }
+                    (context as? Activity)?.finish()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                 modifier = Modifier.fillMaxWidth()
