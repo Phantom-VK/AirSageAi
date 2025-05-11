@@ -1,4 +1,6 @@
 import org.gradle.kotlin.dsl.implementation
+import java.util.Properties
+
 
 plugins {
     alias(libs.plugins.android.application)
@@ -9,12 +11,25 @@ plugins {
     id("com.google.dagger.hilt.android")
 
 }
+val localProperties = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
+val airApiKey: String = localProperties.getProperty("AIR_QUALITY_API_KEY") ?: "\"\""
+
 
 android {
+
     namespace = "com.vikram.airsageai"
     compileSdk = 35
 
     defaultConfig {
+
+
+        // Load properties from local.properties
+
+        buildConfigField("String", "AIR_QUALITY_API_KEY", "\"${airApiKey}\"")
+
+
         applicationId = "com.vikram.airsageai"
         minSdk = 24
         targetSdk = 35
@@ -41,9 +56,19 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
+
+
+
+
+
+
 }
+
+
+
 
 dependencies {
     // Jetpack Compose
@@ -55,7 +80,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("androidx.navigation:navigation-compose:2.8.9")
+    implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
 
     //datastore
@@ -75,7 +100,7 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
     // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
 
 
     //Linechart
@@ -101,4 +126,5 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
 }
