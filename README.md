@@ -35,7 +35,7 @@ Designed with **Figma** for clean, modern UI and built with the latest Android t
   <tr>
     <td align="center"><img src="assets/screenshot1.png" width="600" alt=""/></td>
     <td align="center"><img src="assets/screenshot2.jpg" width="200" alt=""/></td>
-<td align="center"><img src="assets/screenshot3.jpg" width="200" alt=""/></td>
+<td align="center"><img src="assets/screenshot3.jpeg" width="200" alt=""/></td>
   </tr>
 </table>
 
