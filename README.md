@@ -33,9 +33,9 @@ Designed with **Figma** for clean, modern UI and built with the latest Android t
 
 <table>
   <tr>
-    <td align="center"><img src="assets/screenshot1.png" width="600" alt=""/></td>
-    <td align="center"><img src="assets/screenshot2.jpg" width="200" alt=""/></td>
-<td align="center"><img src="assets/screenshot3.jpeg" width="200" alt=""/></td>
+    <td align="center"><img src="assets/screenshot1.png" width="600" alt="Main Dashboard"/></td>
+    <td align="center"><img src="assets/screenshot2.jpg" width="200" alt="Location Details"/></td>
+    <td align="center"><img src="assets/screenshot3.jpeg" width="200" alt="Air Quality Insights"/></td>
   </tr>
 </table>
 
@@ -45,7 +45,7 @@ Designed with **Figma** for clean, modern UI and built with the latest Android t
 
 - 🖌️ **Jetpack Compose** – Modern UI toolkit for Android
 - 🔥 **Firebase Realtime Database** – Real-time data sync with hardware
-- 📍 **Google Maps & Location Services** – Display AQI by user’s location
+- 📍 **Google Maps & Location Services** – Display AQI by user's location
 - 🔔 **Accompanist Permissions** – Runtime permission handling
 - 🧠 **WorkManager & DataStore** – Background processing & user preferences
 - 🎨 **Figma** – Design-first approach to UI prototyping
@@ -55,20 +55,19 @@ Designed with **Figma** for clean, modern UI and built with the latest Android t
 ## 🧩 Key Dependencies
 
 <details>
-<summary>Click to view all</summary>
+<summary>Click to view all dependencies</summary>
 
 ```kotlin
 // Navigation
-implementation("androidx.navigation:navigation-compose:2.8.9")
+implementation("androidx.navigation:navigation-compose:2.9.0")
 
 // DataStore
 implementation("androidx.datastore:datastore-preferences:1.1.4")
 
 // Background tasks
-implementation("androidx.work:work-runtime-ktx:2.10.0")
+implementation("androidx.work:work-runtime-ktx:2.10.1")
 
 // Maps & location
-implementation("com.google.maps.android:maps-compose:6.4.1")
 implementation("com.google.android.gms:play-services-location:21.3.0")
 
 // Compose runtime
@@ -80,7 +79,42 @@ implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 // Firebase Realtime Database
 implementation(libs.firebase.database)
 
-// Jetpack Compose UI, Material3, Testing, etc.
+// Dependency Injection
+implementation("com.google.dagger:hilt-android:2.56.1")
+
+// Networking
+implementation("com.squareup.retrofit2:retrofit:2.11.0")
+implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+// Jetpack Compose UI
 implementation(libs.androidx.material3)
 ```
 </details>
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Android Studio Hedgehog or later
+- JDK 11+
+- Android SDK 24+
+
+### Installation
+1. Clone the repository
+2. Set up Firebase project and add `google-services.json`
+3. Create `secret.properties` with your API keys
+4. Sync Gradle dependencies
+5. Build and run the project
+
+---
+
+## 🤝 Contributing
+
+Interested in contributing?
+- Fork the repository
+- Create a feature branch
+- Submit a pull request
+- Follow our coding guidelines
+
+---

@@ -415,7 +415,7 @@ fun ObservationsGrid(gasReading: GasReading?) {
             .padding(horizontal = 20.dp)
     ) {
         Text(
-            text = "Current Observations (matlab ppm)",
+            text = "Current Observations",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(vertical = 8.dp)
@@ -459,8 +459,7 @@ fun ObservationCard(
     title: String,
     gasValue: Float,
     gasState: GasState,
-    modifier: Modifier = Modifier,
-    unit: String = "matlab ppm"
+    modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier,
@@ -508,12 +507,7 @@ fun ObservationCard(
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = unit,
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
+
             }
         }
     }
