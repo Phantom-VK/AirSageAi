@@ -55,8 +55,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.vikram.airsageai.R
 import com.vikram.airsageai.data.dataclass.GasReading
 import com.vikram.airsageai.data.dataclass.GasState
+import com.vikram.airsageai.data.dataclass.GasThresholds
+import com.vikram.airsageai.data.dataclass.gasThresholdsMap
 import com.vikram.airsageai.ui.components.CircularSpeedIndicator
 import com.vikram.airsageai.utils.LocationUtils
+import org.apache.poi.hssf.usermodel.HeaderFooter.fontSize
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -76,7 +79,7 @@ fun HomeScreen(
     val aqiCategory = gasReading.getAQICategory(overallAQI ?: 0)
     val aqiColor = try {
         Color(gasReading.getAQIColor(overallAQI ?: 0).toColorInt())
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         MaterialTheme.colorScheme.primary
     }
 
@@ -287,48 +290,48 @@ fun HealthInfoCard(healthImplications: String, aqiColor: Color) {
     }
 }
 
-@Composable
-fun PollutantLevelsSection(gasReading: State<GasReading?>) {
-    val reading = gasReading.value ?: return
-
-    // Get individual AQI values for each pollutant
-    val aqiValues = reading.toAQI()
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Pollutant AQI Levels",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            HorizontalDivider(color = Color.LightGray)
-
-            // Display individual pollutant AQI levels
-            PollutantAqiRow("CO", aqiValues["CO"] ?: 0, reading)
-            PollutantAqiRow("Benzene", aqiValues["Benzene"] ?: 0, reading)
-            PollutantAqiRow("NH3", aqiValues["NH3"] ?: 0, reading)
-            PollutantAqiRow("Smoke", aqiValues["Smoke"] ?: 0, reading)
-            PollutantAqiRow("LPG", aqiValues["LPG"] ?: 0, reading)
-            PollutantAqiRow("Methane", aqiValues["Methane"] ?: 0, reading)
-            PollutantAqiRow("Hydrogen", aqiValues["Hydrogen"] ?: 0, reading)
-        }
-    }
-}
+//@Composable
+//fun PollutantLevelsSection(gasReading: State<GasReading?>) {
+//    val reading = gasReading.value ?: return
+//
+//    // Get individual AQI values for each pollutant
+//    val aqiValues = reading.toAQI()
+//
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(horizontal = 20.dp),
+//        shape = RoundedCornerShape(16.dp),
+//        colors = CardDefaults.cardColors(
+//            containerColor = Color.White
+//        ),
+//        elevation = CardDefaults.cardElevation(
+//            defaultElevation = 4.dp
+//        )
+//    ) {
+//        Column(
+//            modifier = Modifier.padding(16.dp)
+//        ) {
+//            Text(
+//                text = "Pollutant AQI Levels",
+//                fontSize = 20.sp,
+//                fontWeight = FontWeight.Bold,
+//                modifier = Modifier.padding(bottom = 8.dp)
+//            )
+//
+//            HorizontalDivider(color = Color.LightGray)
+//
+//            // Display individual pollutant AQI levels
+//            PollutantAqiRow("CO", aqiValues["CO"] ?: 0, reading)
+//            PollutantAqiRow("Benzene", aqiValues["Benzene"] ?: 0, reading)
+//            PollutantAqiRow("NH3", aqiValues["NH3"] ?: 0, reading)
+//            PollutantAqiRow("Smoke", aqiValues["Smoke"] ?: 0, reading)
+//            PollutantAqiRow("LPG", aqiValues["LPG"] ?: 0, reading)
+//            PollutantAqiRow("Methane", aqiValues["Methane"] ?: 0, reading)
+//            PollutantAqiRow("Hydrogen", aqiValues["Hydrogen"] ?: 0, reading)
+//        }
+//    }
+//}
 
 @Composable
 fun PollutantAqiRow(pollutant: String, aqi: Int, reading: GasReading) {
@@ -393,22 +396,18 @@ fun PollutantAqiRow(pollutant: String, aqi: Int, reading: GasReading) {
 }
 
 @Composable
-fun ObservationsGrid(
-    gasReading: GasReading?
-) {
-    val CO = gasReading?.CO?.toFloat() ?: 0f
-    val Benzene = gasReading?.Benzene?.toFloat() ?: 0f
-    val NH3 = gasReading?.NH3?.toFloat() ?: 0f
-    val Smoke = gasReading?.Smoke?.toFloat() ?: 0f
-    val LPG = gasReading?.LPG?.toFloat() ?: 0f
-    val Methane = gasReading?.CH4?.toFloat() ?: 0f
-    val Hydrogen = gasReading?.H2?.toFloat() ?: 0f
+fun ObservationsGrid(gasReading: GasReading?) {
+    val gases = listOf(
+        "CO" to (gasReading?.CO ?: 0.0).toFloat(),
+        "Benzene" to (gasReading?.Benzene ?: 0.0).toFloat(),
+        "NH3" to (gasReading?.NH3 ?: 0.0).toFloat(),
+        "Smoke" to (gasReading?.Smoke ?: 0.0).toFloat(),
+        "LPG" to (gasReading?.LPG ?: 0.0).toFloat(),
+        "Methane" to (gasReading?.CH4 ?: 0.0).toFloat(),
+        "Hydrogen" to (gasReading?.H2 ?: 0.0).toFloat()
+    )
 
-    // Create a dummy GasReading to access its functions
-    val reading = gasReading ?: GasReading()
-
-    // Get individual AQI values to determine thresholds
-    val aqiValues = if (gasReading != null) gasReading.toAQI() else mapOf()
+    val rows = gases.chunked(2) // create pairs, last one will be solo
 
     Column(
         modifier = Modifier
@@ -416,121 +415,55 @@ fun ObservationsGrid(
             .padding(horizontal = 20.dp)
     ) {
         Text(
-            text = "Current Observations (ppm)",
-            fontSize = 24.sp,
+            text = "Current Observations (matlab ppm)",
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
-        // First row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            ObservationCard(
-                title = "CO",
-                gasValue = CO,
-                aqiValue = aqiValues["CO"] ?: 0,
-                gasReading = reading,
-                modifier = Modifier.weight(1f)
-            )
-            ObservationCard(
-                title = "Benzene",
-                gasValue = Benzene,
-                aqiValue = aqiValues["Benzene"] ?: 0,
-                gasReading = reading,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        rows.forEachIndexed { index, row ->
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                row.forEach { (name, value) ->
+                    val thresholds = gasThresholdsMap[name] ?: GasThresholds(1000f, 500f, 800f)
+                    ObservationCard(
+                        title = name,
+                        gasValue = value,
+                        gasState = GasState(
+                            gasValue = value,
+                            maxGasValue = thresholds.max,
+                            warningThreshold = thresholds.warning,
+                            dangerThreshold = thresholds.danger
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(100.dp)
+                    )
+                }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Second row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            ObservationCard(
-                title = "NH3",
-                gasValue = NH3,
-                aqiValue = aqiValues["NH3"] ?: 0,
-                gasReading = reading,
-                modifier = Modifier.weight(1f)
-            )
-            ObservationCard(
-                title = "Smoke",
-                gasValue = Smoke,
-                aqiValue = aqiValues["Smoke"] ?: 0,
-                gasReading = reading,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Third row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            ObservationCard(
-                title = "LPG",
-                gasValue = LPG,
-                aqiValue = aqiValues["LPG"] ?: 0,
-                gasReading = reading,
-                modifier = Modifier.weight(1f)
-            )
-            ObservationCard(
-                title = "Methane",
-                gasValue = Methane,
-                aqiValue = aqiValues["Methane"] ?: 0,
-                gasReading = reading,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Fourth row - Single card centered
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            ObservationCard(
-                title = "Hydrogen",
-                gasValue = Hydrogen,
-                aqiValue = aqiValues["Hydrogen"] ?: 0,
-                gasReading = reading,
-                modifier = Modifier.width(180.dp)
-            )
+                // If last row has only 1 item
+                if (row.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
 
+
 @Composable
 fun ObservationCard(
-    modifier: Modifier = Modifier,
     title: String,
     gasValue: Float,
-    aqiValue: Int,
-    gasReading: GasReading,
-    maxGasValue: Float = 1000f,
-    unit: String = "ppm",
-
+    gasState: GasState,
+    modifier: Modifier = Modifier,
+    unit: String = "matlab ppm"
 ) {
-    // Calculate thresholds based on AQI categories
-    val warningThreshold = maxGasValue * 0.5f // 50% of max (AQI around 100)
-    val dangerThreshold = maxGasValue * 0.8f  // 80% of max (AQI around 150+)
-
-    // Get color for AQI value
-    val aqiColor = try {
-        Color(gasReading.getAQIColor(aqiValue).toColorInt())
-    } catch (e: Exception) {
-        Color.Green
-    }
-
     Card(
-        modifier = modifier.height(140.dp),
+        modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -541,58 +474,47 @@ fun ObservationCard(
                 .padding(12.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Circular Speed Indicator
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(50))
                 ) {
                     CircularSpeedIndicator(
-                        gasState = GasState(
-                            gasValue = gasValue,
-                            maxGasValue = maxGasValue,
-                            warningThreshold = warningThreshold,
-                            dangerThreshold = dangerThreshold
-                        ),
+                        gasState = gasState,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Chemical name
                 Text(
-                    text = "$title ($unit)",
+                    text = title,
                     fontSize = 18.sp,
-                    color = Color.Gray
+                    color = Color.Black
                 )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Value
-            Text(
-                text = "${gasValue.toFloat()}",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            // AQI value for this pollutant
-//            Surface(
-//                shape = RoundedCornerShape(4.dp),
-//                color = aqiColor.copy(alpha = 0.2f)
-//            ) {
-//                Text(
-//                    text = "AQI: $aqiValue",
-//                    fontSize = 14.sp,
-//                    fontWeight = FontWeight.Medium,
-//                    color = aqiColor,
-//                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-//                )
-//            }
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text(
+                    text = "%.2f".format(gasValue),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = unit,
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
         }
     }
 }
