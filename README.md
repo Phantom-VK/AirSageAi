@@ -106,7 +106,6 @@ implementation(libs.androidx.material3)
 3. Create `secret.properties` with your API keys
 4. Sync Gradle dependencies
 5. Build and run the project
-
 ---
 
 ## 🤝 Contributing
